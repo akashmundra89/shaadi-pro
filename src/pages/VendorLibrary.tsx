@@ -1,0 +1,126 @@
+import { useEffect, useState } from 'react';
+import { db } from '../db';
+import { CAT_ICO, CAT_BG, stars } from '../utils';
+import { useToast } from '../context/ToastContext';
+import type { VendorLib, Wedding } from '../types';
+
+interface Props {
+  onAddLibVendor: () => void;
+  refreshKey: number;
+  onRefresh: () => void;
+}
+
+const CATEGORIES = ['all', 'Venue', 'Catering', 'Photography', 'Décor', 'Music', 'Pandit', 'Makeup', 'Transport'];
+
+export default function VendorLibrary({ onAddLibVendor, refreshKey, onRefresh }: Props) {
+  const [vendors, setVendors] = useState<VendorLib[]>([]);
+  const [weddings, setWeddings] = useState<Wedding[]>([]);
+  const [cityFilter, setCityFilter] = useState('all');
+  const [catFilter, setCatFilter] = useState('all');
+  const [search, setSearch] = useState('');
+  const { toast } = useToast();
+
+  useEffect(() => {
+    Promise.all([
+      db.vendorLib.toArray(),
+      db.weddings.toArray(),
+    ]).then(([vs, ws]) => { setVendors(vs); setWeddings(ws); });
+  }, [refreshKey]);
+
+  async function useVendorInWedding(libId: number, wId: number) {
+    if (!wId) { toast('Select a wedding first'); return; }
+    const v = await db.vendorLib.get(libId);
+    const w = await db.weddings.get(wId);
+    if (!v || !w) return;
+    await db.vendors.add({ weddingId: wId, name: v.name, category: v.category, city: v.city, amount: 0, payStatus: 'pending', phone: v.phone || '', detail: v.detail || '' });
+    const used = v.usedIn || [];
+    if (!used.includes(w.name)) await db.vendorLib.update(libId, { usedIn: [...used, w.name] });
+    onRefresh();
+    toast(`✓ ${v.name} added to ${w.name}`);
+  }
+
+  async function deleteLibVendor(id: number) {
+    if (!confirm('Remove from library?')) return;
+    await db.vendorLib.delete(id);
+    onRefresh();
+  }
+
+  const cities = [...new Set(vendors.map(v => v.city).filter(Boolean))].sort();
+
+  const filtered = vendors
+    .filter(v => cityFilter === 'all' || v.city === cityFilter)
+    .filter(v => catFilter === 'all' || v.category === catFilter)
+    .filter(v => !search || v.name.toLowerCase().includes(search.toLowerCase()) || (v.city || '').toLowerCase().includes(search.toLowerCase()));
+
+  return (
+    <div className="page">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+        <div>
+          <div style={{ fontSize: 15, fontWeight: 700 }}>Vendor Library</div>
+          <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>Master list of all vendors — reuse across multiple weddings, filtered by city/location</div>
+        </div>
+        <button className="btn btn-p btn-sm" onClick={onAddLibVendor}><i className="ti ti-plus" /> Add to Library</button>
+      </div>
+
+      <div className="fbar">
+        <button className={`fb ${cityFilter === 'all' ? 'on' : ''}`} onClick={() => setCityFilter('all')}>All Cities</button>
+        {cities.map(city => (
+          <button key={city} className={`fb ${cityFilter === city ? 'on' : ''}`} onClick={() => setCityFilter(city)}>{city}</button>
+        ))}
+      </div>
+
+      <div className="fbar">
+        {CATEGORIES.map(cat => (
+          <button key={cat} className={`fb ${catFilter === cat ? 'on' : ''}`} onClick={() => setCatFilter(cat)}>
+            {cat === 'all' ? 'All Categories' : cat}
+          </button>
+        ))}
+        <div className="ml">
+          <input className="inp" placeholder="Search library..." style={{ width: 160 }} value={search} onChange={e => setSearch(e.target.value)} />
+        </div>
+      </div>
+
+      {filtered.length === 0
+        ? <div className="empty"><i className="ti ti-building-store" />No vendors in library for this filter.</div>
+        : filtered.map(v => (
+          <div className="vlib-card" key={v.id}>
+            <div className="vlib-ico" style={{ background: CAT_BG[v.category] || 'var(--blue-l)' }}>{CAT_ICO[v.category] || '🏢'}</div>
+            <div className="vlib-info">
+              <div className="vlib-name">{v.name}</div>
+              <div className="vlib-sub">{v.detail} {v.phone ? `· ☎ ${v.phone}` : ''}</div>
+              <div style={{ marginTop: 3, display: 'flex', gap: 5, alignItems: 'center', flexWrap: 'wrap' }}>
+                <span className="vlib-loc">{v.city || '—'}</span>
+                <span className="tag">{v.category}</span>
+                <span style={{ fontSize: 10, color: 'var(--amber)' }}>{stars(v.rating)}</span>
+              </div>
+              {v.usedIn?.length > 0 && <div className="vlib-weddings">Used in: {v.usedIn.join(', ')}</div>}
+            </div>
+            <div className="vlib-actions">
+              <div>
+                <UseInWeddingDropdown libId={v.id!} weddings={weddings} onUse={useVendorInWedding} />
+              </div>
+              <button className="btn btn-sm" onClick={() => v.id && deleteLibVendor(v.id)} style={{ color: 'var(--coral)', borderColor: 'var(--coral-l)' }}>
+                <i className="ti ti-trash" />
+              </button>
+            </div>
+          </div>
+        ))
+      }
+    </div>
+  );
+}
+
+function UseInWeddingDropdown({ libId, weddings, onUse }: { libId: number; weddings: Wedding[]; onUse: (libId: number, wId: number) => void }) {
+  const [selectedId, setSelectedId] = useState(0);
+  return (
+    <div>
+      <select className="sel" style={{ fontSize: 11, padding: '4px 6px', marginBottom: 4, display: 'block', width: '100%' }} value={selectedId} onChange={e => setSelectedId(parseInt(e.target.value))}>
+        <option value={0}>Add to wedding...</option>
+        {weddings.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
+      </select>
+      <button className="btn btn-t btn-sm" onClick={() => selectedId && onUse(libId, selectedId)} style={{ width: '100%' }}>
+        <i className="ti ti-plus" /> Use in Wedding
+      </button>
+    </div>
+  );
+}
