@@ -40,6 +40,9 @@ export interface Guest {
   rsvp: 'Yes' | 'No' | 'Awaited';
   transport: string;
   food: string;
+  phone?: string;
+  roomNumber?: string;
+  checkedIn?: boolean;
 }
 
 export interface BudgetCategory {
@@ -68,6 +71,17 @@ export interface VendorLib {
   detail: string;
   rating: number;
   usedIn: string[];
+}
+
+export interface TimelineItem {
+  id?: number;
+  weddingId: number;
+  day: 'main' | 'pre';
+  time: string;
+  text: string;
+  sub: string;
+  color: string;
+  sortOrder: number;
 }
 
 export type Page = 'dash' | 'ceremonies' | 'vendors' | 'guests' | 'budget' | 'timeline' | 'checklist' | 'vlibrary';

@@ -9,9 +9,18 @@ interface Props {
   onRefresh: () => void;
 }
 
-function TaskList({ tasks, type, weddingId, onRefresh }: { tasks: Task[]; type: 'pre' | 'day'; weddingId: number | null; onRefresh: () => void }) {
+interface InlineEdit {
+  id: number;
+  label: string;
+  who: string;
+}
+
+function TaskList({ tasks, type, weddingId, onRefresh }: {
+  tasks: Task[]; type: 'pre' | 'day'; weddingId: number | null; onRefresh: () => void;
+}) {
   const [inp, setInp] = useState('');
   const [who, setWho] = useState('');
+  const [editing, setEditing] = useState<InlineEdit | null>(null);
   const { toast } = useToast();
 
   async function toggle(id: number) {
@@ -33,6 +42,22 @@ function TaskList({ tasks, type, weddingId, onRefresh }: { tasks: Task[]; type: 
     toast('✓ Task added');
   }
 
+  function startEdit(t: Task) {
+    setEditing({ id: t.id!, label: t.label, who: t.who || '' });
+  }
+
+  function cancelEdit() { setEditing(null); }
+
+  async function saveEdit() {
+    if (!editing) return;
+    const label = editing.label.trim();
+    if (!label) { toast('Enter task label'); return; }
+    await db.tasks.update(editing.id, { label, who: editing.who.trim() });
+    setEditing(null);
+    onRefresh();
+    toast('✓ Task updated');
+  }
+
   const done = tasks.filter(t => t.done).length;
 
   return (
@@ -48,17 +73,67 @@ function TaskList({ tasks, type, weddingId, onRefresh }: { tasks: Task[]; type: 
       </div>
 
       {tasks.map(t => (
-        <div className="ck" key={t.id}>
-          <div className={`ck-box ${t.done ? 'done' : ''}`} onClick={() => t.id && toggle(t.id)}>{t.done ? '✓' : ''}</div>
-          <span className={`ck-lbl ${t.done ? 'done' : ''}`}>{t.label}</span>
-          <span className="ck-who">{t.who}</span>
-          <button className="ck-del" onClick={() => t.id && deleteTask(t.id)}><i className="ti ti-x" /></button>
-        </div>
+        editing?.id === t.id ? (
+          <div className="ck" key={t.id} style={{ gap: 6 }}>
+            <div className={`ck-box ${t.done ? 'done' : ''}`}>{t.done ? '✓' : ''}</div>
+            <input
+              className="inp"
+              value={editing?.label ?? ''}
+              onChange={e => setEditing(prev => prev ? { ...prev, label: e.target.value } : prev)}
+              onKeyDown={e => { if (e.key === 'Enter') saveEdit(); if (e.key === 'Escape') cancelEdit(); }}
+              style={{ flex: 1, padding: '3px 7px', fontSize: 12 }}
+              autoFocus
+            />
+            <input
+              className="inp"
+              value={editing?.who ?? ''}
+              onChange={e => setEditing(prev => prev ? { ...prev, who: e.target.value } : prev)}
+              placeholder="Assigned to"
+              style={{ width: 100, padding: '3px 7px', fontSize: 12 }}
+            />
+            <button className="btn btn-t btn-sm" onClick={saveEdit} style={{ padding: '3px 7px' }}>
+              <i className="ti ti-check" />
+            </button>
+            <button className="btn btn-sm" onClick={cancelEdit} style={{ padding: '3px 7px' }}>
+              <i className="ti ti-x" />
+            </button>
+          </div>
+        ) : (
+          <div className="ck" key={t.id}>
+            <div className={`ck-box ${t.done ? 'done' : ''}`} onClick={() => t.id && toggle(t.id)}>{t.done ? '✓' : ''}</div>
+            <span className={`ck-lbl ${t.done ? 'done' : ''}`}>{t.label}</span>
+            <span className="ck-who">{t.who}</span>
+            <button
+              className="ck-del"
+              onClick={() => t.id && startEdit(t)}
+              title="Edit"
+              style={{ color: 'var(--muted)', fontSize: 13 }}
+            >
+              <i className="ti ti-pencil" />
+            </button>
+            <button className="ck-del" onClick={() => t.id && deleteTask(t.id)} title="Delete">
+              <i className="ti ti-x" />
+            </button>
+          </div>
+        )
       ))}
 
       <div className="add-ck">
-        <input className="inp" placeholder={type === 'pre' ? 'New pre-wedding task...' : 'New day-of task...'} style={{ flex: 1 }} value={inp} onChange={e => setInp(e.target.value)} onKeyDown={e => e.key === 'Enter' && addTask()} />
-        <input className="inp" placeholder="Assigned to" style={{ width: 110 }} value={who} onChange={e => setWho(e.target.value)} />
+        <input
+          className="inp"
+          placeholder={type === 'pre' ? 'New pre-wedding task...' : 'New day-of task...'}
+          style={{ flex: 1 }}
+          value={inp}
+          onChange={e => setInp(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && addTask()}
+        />
+        <input
+          className="inp"
+          placeholder="Assigned to"
+          style={{ width: 110 }}
+          value={who}
+          onChange={e => setWho(e.target.value)}
+        />
         <button className="btn btn-p btn-sm" onClick={addTask}><i className="ti ti-plus" /> Add</button>
       </div>
     </div>

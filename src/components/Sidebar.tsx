@@ -1,5 +1,6 @@
 import type { Wedding, Page } from '../types';
 import { fmtDate } from '../utils';
+import heroPng from '../assets/hero.png';
 
 const COLORS = ['var(--amber)', 'var(--purple)', 'var(--teal)', 'var(--pink)', 'var(--coral)'];
 const BGS = ['var(--amber-l)', 'var(--purple-l)', 'var(--teal-l)', 'var(--pink-l)', 'var(--coral-l)'];
@@ -28,18 +29,23 @@ export default function Sidebar({ weddings, currentWeddingId, currentPage, onSel
   return (
     <div className="sb">
       <div className="sb-top">
+        <div className="sb-hero">
+          <img className="sb-hero-img" src={heroPng} alt="" />
+          <div className="sb-hero-overlay" />
+          <div className="sb-hero-dec">💍</div>
+        </div>
         <div className="brand">
           <div className="brand-ico">🪔</div>
           <div>
             <div className="brand-t">Shaadi Pro</div>
-            <div className="brand-s">Event Manager Platform</div>
+            <div className="brand-s">Wedding Manager</div>
           </div>
         </div>
       </div>
 
       <div className="sb-scroll">
         <div className="sb-sec">
-          <div className="sb-lbl">Platform</div>
+          <div className="sb-lbl">Navigation</div>
           {NAV_ITEMS.map(item => (
             <div
               key={item.page}

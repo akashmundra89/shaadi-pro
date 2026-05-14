@@ -4,7 +4,7 @@ import { fmtDate } from './utils';
 import { ToastProvider } from './context/ToastContext';
 import Sidebar from './components/Sidebar';
 import Topbar from './components/Topbar';
-import { ModalManager, type ModalType } from './components/Modals';
+import { ModalManager } from './components/Modals';
 import Dashboard from './pages/Dashboard';
 import Ceremonies from './pages/Ceremonies';
 import Vendors from './pages/Vendors';
@@ -20,7 +20,7 @@ export default function App() {
   const [currentWeddingId, setCurrentWeddingId] = useState<number | null>(null);
   const [currentWedding, setCurrentWedding] = useState<Wedding | null>(null);
   const [currentPage, setCurrentPage] = useState<Page>('dash');
-  const [modal, setModal] = useState<ModalType>(null);
+  const [showWeddingModal, setShowWeddingModal] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
   const refresh = useCallback(() => setRefreshKey(k => k + 1), []);
@@ -70,7 +70,7 @@ export default function App() {
           currentPage={currentPage}
           onSelectWedding={id => selectWedding(id)}
           onNavigate={setCurrentPage}
-          onNewWedding={() => setModal('add-wedding')}
+          onNewWedding={() => setShowWeddingModal(true)}
         />
 
         <div className="main">
@@ -83,31 +83,31 @@ export default function App() {
             <Dashboard weddingId={currentWeddingId} onNavigate={setCurrentPage} onToggleTask={toggleTask} refreshKey={refreshKey} />
           )}
           {currentPage === 'ceremonies' && (
-            <Ceremonies weddingId={currentWeddingId} onAddCeremony={() => setModal('add-ceremony')} refreshKey={refreshKey} onRefresh={refresh} />
+            <Ceremonies weddingId={currentWeddingId} refreshKey={refreshKey} onRefresh={refresh} />
           )}
           {currentPage === 'vendors' && (
-            <Vendors weddingId={currentWeddingId} onAddVendor={() => setModal('add-vendor')} refreshKey={refreshKey} onRefresh={refresh} />
+            <Vendors weddingId={currentWeddingId} refreshKey={refreshKey} onRefresh={refresh} />
           )}
           {currentPage === 'guests' && (
-            <Guests weddingId={currentWeddingId} onAddGuest={() => setModal('add-guest')} refreshKey={refreshKey} onRefresh={refresh} />
+            <Guests weddingId={currentWeddingId} refreshKey={refreshKey} onRefresh={refresh} />
           )}
           {currentPage === 'budget' && (
-            <Budget weddingId={currentWeddingId} onAddBudget={() => setModal('add-budget')} refreshKey={refreshKey} onRefresh={refresh} />
+            <Budget weddingId={currentWeddingId} refreshKey={refreshKey} onRefresh={refresh} />
           )}
-          {currentPage === 'timeline' && <TimelinePage />}
+          {currentPage === 'timeline' && (
+            <TimelinePage weddingId={currentWeddingId} refreshKey={refreshKey} onRefresh={refresh} />
+          )}
           {currentPage === 'checklist' && (
             <Checklist weddingId={currentWeddingId} refreshKey={refreshKey} onRefresh={refresh} />
           )}
           {currentPage === 'vlibrary' && (
-            <VendorLibrary onAddLibVendor={() => setModal('add-lib-vendor')} refreshKey={refreshKey} onRefresh={refresh} />
+            <VendorLibrary refreshKey={refreshKey} onRefresh={refresh} />
           )}
         </div>
 
         <ModalManager
-          modal={modal}
-          weddingId={currentWeddingId}
-          weddings={weddings}
-          onClose={() => setModal(null)}
+          show={showWeddingModal}
+          onClose={() => setShowWeddingModal(false)}
           onRefresh={refreshWeddings}
           onWeddingSelect={id => selectWedding(id)}
         />

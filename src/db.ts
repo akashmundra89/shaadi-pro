@@ -1,5 +1,5 @@
 import Dexie, { type Table } from 'dexie';
-import type { Wedding, Ceremony, Vendor, Guest, BudgetCategory, Task, VendorLib } from './types';
+import type { Wedding, Ceremony, Vendor, Guest, BudgetCategory, Task, VendorLib, TimelineItem } from './types';
 
 export class ShaadiProDB extends Dexie {
   weddings!: Table<Wedding, number>;
@@ -9,6 +9,7 @@ export class ShaadiProDB extends Dexie {
   budget!: Table<BudgetCategory, number>;
   tasks!: Table<Task, number>;
   vendorLib!: Table<VendorLib, number>;
+  timeline!: Table<TimelineItem, number>;
 
   constructor() {
     super('ShaadiPro');
@@ -20,6 +21,16 @@ export class ShaadiProDB extends Dexie {
       budget: '++id,weddingId,category,spent,total',
       tasks: '++id,weddingId,type,label,who,done',
       vendorLib: '++id,name,category,city,phone,detail,rating,usedIn',
+    });
+    this.version(3).stores({
+      weddings: '++id,name,date,venue,city',
+      ceremonies: '++id,weddingId,name,date,time,location,guests,side,status',
+      vendors: '++id,weddingId,name,category,city,amount,payStatus,phone,detail',
+      guests: '++id,weddingId,name,side,relation,ceremonies,rsvp,transport,food',
+      budget: '++id,weddingId,category,spent,total',
+      tasks: '++id,weddingId,type,label,who,done',
+      vendorLib: '++id,name,category,city,phone,detail,rating,usedIn',
+      timeline: '++id,weddingId,day,sortOrder',
     });
   }
 }
@@ -53,14 +64,14 @@ export async function seedIfEmpty() {
   ]);
 
   await db.guests.bulkAdd([
-    { weddingId: wId, name: 'Rajesh Agarwal', side: 'Groom', relation: 'Chacha ji', ceremonies: 'All', rsvp: 'Yes', transport: 'Self', food: 'Jain' },
-    { weddingId: wId, name: 'Sunita Sharma', side: 'Bride', relation: 'Mausi ji', ceremonies: 'Sangeet, Pheras', rsvp: 'Yes', transport: 'Coach A', food: 'Veg' },
-    { weddingId: wId, name: 'Vikram Verma', side: 'Groom', relation: 'College friend', ceremonies: 'Baraat, Sangeet', rsvp: 'Awaited', transport: '—', food: 'Veg' },
-    { weddingId: wId, name: 'Priya Gupta', side: 'Bride', relation: 'Best friend', ceremonies: 'Mehendi, Sangeet', rsvp: 'Yes', transport: 'Self', food: 'Veg' },
-    { weddingId: wId, name: 'Mohanlal Jain', side: 'Both', relation: 'Parivar mitra', ceremonies: 'Pheras, Reception', rsvp: 'No', transport: '—', food: 'Jain' },
-    { weddingId: wId, name: 'Kavita Patel', side: 'Groom', relation: 'Bua ji', ceremonies: 'All', rsvp: 'Yes', transport: 'Coach B', food: 'Veg' },
-    { weddingId: wId, name: 'Deepak Sharma', side: 'Bride', relation: 'Bhaiya', ceremonies: 'All', rsvp: 'Yes', transport: 'Self', food: 'Veg' },
-    { weddingId: wId, name: 'Anita Mehta', side: 'Bride', relation: 'Padosan', ceremonies: 'Mehendi, Reception', rsvp: 'Awaited', transport: '—', food: 'Veg' },
+    { weddingId: wId, name: 'Rajesh Agarwal', side: 'Groom', relation: 'Chacha ji', ceremonies: 'All', rsvp: 'Yes', transport: 'Self', food: 'Jain', phone: '9876500001', roomNumber: '101', checkedIn: true },
+    { weddingId: wId, name: 'Sunita Sharma', side: 'Bride', relation: 'Mausi ji', ceremonies: 'Sangeet, Pheras', rsvp: 'Yes', transport: 'Coach A', food: 'Veg', phone: '9876500002', roomNumber: '102', checkedIn: true },
+    { weddingId: wId, name: 'Vikram Verma', side: 'Groom', relation: 'College friend', ceremonies: 'Baraat, Sangeet', rsvp: 'Awaited', transport: '—', food: 'Veg', phone: '9876500003' },
+    { weddingId: wId, name: 'Priya Gupta', side: 'Bride', relation: 'Best friend', ceremonies: 'Mehendi, Sangeet', rsvp: 'Yes', transport: 'Self', food: 'Veg', phone: '9876500004', roomNumber: '205', checkedIn: true },
+    { weddingId: wId, name: 'Mohanlal Jain', side: 'Both', relation: 'Parivar mitra', ceremonies: 'Pheras, Reception', rsvp: 'No', transport: '—', food: 'Jain', phone: '' },
+    { weddingId: wId, name: 'Kavita Patel', side: 'Groom', relation: 'Bua ji', ceremonies: 'All', rsvp: 'Yes', transport: 'Coach B', food: 'Veg', phone: '9876500006' },
+    { weddingId: wId, name: 'Deepak Sharma', side: 'Bride', relation: 'Bhaiya', ceremonies: 'All', rsvp: 'Yes', transport: 'Self', food: 'Veg', phone: '9876500007', roomNumber: '310', checkedIn: true },
+    { weddingId: wId, name: 'Anita Mehta', side: 'Bride', relation: 'Padosan', ceremonies: 'Mehendi, Reception', rsvp: 'Awaited', transport: '—', food: 'Veg', phone: '9876500008' },
   ]);
 
   await db.budget.bulkAdd([
@@ -91,6 +102,24 @@ export async function seedIfEmpty() {
     { weddingId: wId, type: 'day', label: 'Receive baraat at main gate', who: 'Suresh', done: false },
     { weddingId: wId, type: 'day', label: 'Coordinate Jaimala photo positions', who: 'Manager', done: false },
     { weddingId: wId, type: 'day', label: 'Manage Pheras timing with pandit', who: 'Manager', done: false },
+  ]);
+
+  await db.timeline.bulkAdd([
+    { weddingId: wId, day: 'main', time: '7:00 AM', text: 'Mandap & venue setup check', sub: 'Manager arrives · Verify décor, sound, seating', color: 'var(--teal)', sortOrder: 1 },
+    { weddingId: wId, day: 'main', time: '8:30 AM', text: 'Bridal makeup begins', sub: "Bridal team · Bride's room", color: 'var(--amber)', sortOrder: 2 },
+    { weddingId: wId, day: 'main', time: '10:00 AM', text: 'Baraat starts 🐎', sub: "Dhol band + Ghodi · Groom's house", color: 'var(--amber)', sortOrder: 3 },
+    { weddingId: wId, day: 'main', time: '11:00 AM', text: 'Baraat arrives at venue', sub: 'Welcome with tika, flowers', color: 'var(--coral)', sortOrder: 4 },
+    { weddingId: wId, day: 'main', time: '11:30 AM', text: 'Jaimala & Milni 🌸', sub: 'Main entrance · Garland exchange · Photo session', color: 'var(--pink)', sortOrder: 5 },
+    { weddingId: wId, day: 'main', time: '12:00 PM', text: 'Pheras begin 🔥', sub: 'Pandit · Mandap · ~2.5 hrs', color: 'var(--purple)', sortOrder: 6 },
+    { weddingId: wId, day: 'main', time: '1:30 PM', text: 'Lunch buffet opens', sub: 'Caterers · All guests', color: 'var(--amber)', sortOrder: 7 },
+    { weddingId: wId, day: 'main', time: '2:30 PM', text: 'Pheras conclude · Sindoor', sub: 'Saptapadi complete · Family blessings', color: 'var(--purple)', sortOrder: 8 },
+    { weddingId: wId, day: 'main', time: '5:30 PM', text: 'Vidaai 🚪', sub: 'Emotional farewell · Decorated car', color: 'var(--pink)', sortOrder: 9 },
+    { weddingId: wId, day: 'main', time: '7:00 PM', text: 'Reception begins 🎉', sub: 'Banquet Hall · DJ · Dinner', color: 'var(--teal)', sortOrder: 10 },
+    { weddingId: wId, day: 'pre', time: '12 Feb · 4:00 PM', text: 'Mehendi Ceremony 🌿', sub: "~80 guests · Bride's side", color: 'var(--teal)', sortOrder: 1 },
+    { weddingId: wId, day: 'pre', time: '12 Feb · 8:00 PM', text: 'Mehendi dinner', sub: 'Family gathering', color: 'var(--teal)', sortOrder: 2 },
+    { weddingId: wId, day: 'pre', time: '13 Feb · 2:00 PM', text: "Haldi — Bride's side 🌸", sub: 'Intimate · Family only', color: 'var(--purple)', sortOrder: 3 },
+    { weddingId: wId, day: 'pre', time: '13 Feb · 3:00 PM', text: "Haldi — Groom's side 🌸", sub: "Groom's house · Friends + family", color: 'var(--amber)', sortOrder: 4 },
+    { weddingId: wId, day: 'pre', time: '13 Feb · 7:00 PM', text: 'Sangeet Night 🎵', sub: 'Lawns · DJ · ~220 guests', color: 'var(--pink)', sortOrder: 5 },
   ]);
 
   await db.vendorLib.bulkAdd([
