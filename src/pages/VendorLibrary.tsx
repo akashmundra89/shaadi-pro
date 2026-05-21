@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import * as XLSX from 'xlsx';
-import { db } from '../db';
+import * as api from '../lib/api';
 import { CAT_ICO, CAT_BG, stars } from '../utils';
 import { useToast } from '../context/ToastContext';
 import { LibVendorModal } from '../components/Modals';
@@ -24,7 +24,7 @@ export default function VendorLibrary({ refreshKey, onRefresh }: Props) {
   const { toast } = useToast();
 
   useEffect(() => {
-    Promise.all([db.vendorLib.toArray(), db.weddings.toArray()])
+    Promise.all([api.getVendorLib(), api.getWeddings()])
       .then(([vs, ws]) => { setVendors(vs); setWeddings(ws); });
   }, [refreshKey]);
 
@@ -34,12 +34,12 @@ export default function VendorLibrary({ refreshKey, onRefresh }: Props) {
 
   async function useVendorInWedding(libId: number, wId: number) {
     if (!wId) { toast('Select a wedding first'); return; }
-    const v = await db.vendorLib.get(libId);
-    const w = await db.weddings.get(wId);
+    const v = vendors.find(x => x.id === libId);
+    const w = weddings.find(x => x.id === wId);
     if (!v || !w) return;
-    await db.vendors.add({ weddingId: wId, name: v.name, category: v.category, city: v.city, amount: 0, payStatus: 'pending', phone: v.phone || '', detail: v.detail || '' });
+    await api.addVendor({ weddingId: wId, name: v.name, category: v.category, city: v.city, amount: 0, payStatus: 'pending', phone: v.phone || '', detail: v.detail || '' });
     const used = v.usedIn || [];
-    if (!used.includes(w.name)) await db.vendorLib.update(libId, { usedIn: [...used, w.name] });
+    if (!used.includes(w.name)) await api.updateVendorLib(libId, { usedIn: [...used, w.name] });
     onRefresh();
     toast(`✓ ${v.name} added to ${w.name}`);
   }
@@ -60,7 +60,7 @@ export default function VendorLibrary({ refreshKey, onRefresh }: Props) {
 
   async function deleteLibVendor(id: number) {
     if (!confirm('Remove from library?')) return;
-    await db.vendorLib.delete(id);
+    await api.deleteVendorLib(id);
     onRefresh();
   }
 

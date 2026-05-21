@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
-import { db } from '../db';
+import * as api from '../lib/api';
 import { fmt } from '../utils';
 import { useToast } from '../context/ToastContext';
 import { BudgetModal } from '../components/Modals';
-import type { BudgetCategory } from '../types';
+import type { BudgetCategory, Wedding } from '../types';
 
 interface Props {
   weddingId: number | null;
@@ -15,13 +15,22 @@ const COLORS = ['var(--pink)', 'var(--amber)', 'var(--purple)', 'var(--teal)', '
 
 export default function Budget({ weddingId, refreshKey, onRefresh }: Props) {
   const [budget, setBudget] = useState<BudgetCategory[]>([]);
+  const [wedding, setWedding] = useState<Wedding | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [editItem, setEditItem] = useState<BudgetCategory | undefined>();
+  const [editingTotal, setEditingTotal] = useState(false);
+  const [totalInput, setTotalInput] = useState('');
   const { toast } = useToast();
 
   useEffect(() => {
-    if (!weddingId) { setBudget([]); return; }
-    db.budget.where('weddingId').equals(weddingId).toArray().then(setBudget);
+    if (!weddingId) { setBudget([]); setWedding(null); return; }
+    Promise.all([
+      api.getBudget(weddingId),
+      api.getWedding(weddingId),
+    ]).then(([b, w]) => {
+      setBudget(b);
+      setWedding(w);
+    });
   }, [weddingId, refreshKey]);
 
   function openAdd() { setEditItem(undefined); setShowModal(true); }
@@ -30,26 +39,77 @@ export default function Budget({ weddingId, refreshKey, onRefresh }: Props) {
 
   async function deleteBudget(id: number) {
     if (!confirm('Delete this budget category?')) return;
-    await db.budget.delete(id);
+    await api.deleteBudgetCategory(id);
     onRefresh();
     toast('Category removed');
   }
 
+  async function saveTotalBudget() {
+    if (!weddingId) return;
+    const val = parseInt(totalInput.replace(/,/g, '')) || 0;
+    await api.updateWedding(weddingId, { totalBudget: val });
+    setEditingTotal(false);
+    onRefresh();
+    toast('✓ Total budget updated');
+  }
+
   const spent = budget.reduce((a, b) => a + b.spent, 0);
-  const total = budget.reduce((a, b) => a + b.total, 0);
-  const pct = total ? Math.round(spent / total * 100) : 0;
+  const catTotal = budget.reduce((a, b) => a + b.total, 0);
+  const totalBudgetVal = wedding?.totalBudget ?? catTotal;
+  const remaining = totalBudgetVal - spent;
+  const over = remaining < 0;
+  const pct = totalBudgetVal ? Math.round(spent / totalBudgetVal * 100) : 0;
 
   return (
     <>
       <div className="page">
         <div className="card" style={{ marginBottom: 12 }}>
           <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', paddingBottom: 10, borderBottom: '1px solid var(--border)', marginBottom: 12 }}>
-            <div><div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 2 }}>Total Spent</div><div style={{ fontSize: 26, fontWeight: 700 }}>₹{fmt(spent)}</div></div>
-            <div style={{ textAlign: 'center' }}><div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 2 }}>Budget</div><div style={{ fontSize: 20, fontWeight: 700, color: 'var(--muted)' }}>₹{fmt(total)}</div></div>
-            <div style={{ textAlign: 'right' }}><div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 2 }}>Remaining</div><div style={{ fontSize: 20, fontWeight: 700, color: 'var(--teal)' }}>₹{fmt(total - spent)}</div></div>
+            <div>
+              <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 2 }}>Total Spent</div>
+              <div style={{ fontSize: 26, fontWeight: 700 }}>₹{fmt(spent)}</div>
+            </div>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 2 }}>Total Budget</div>
+              {editingTotal ? (
+                <div style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
+                  <input
+                    className="inp"
+                    type="number"
+                    value={totalInput}
+                    onChange={e => setTotalInput(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') saveTotalBudget(); if (e.key === 'Escape') setEditingTotal(false); }}
+                    style={{ width: 100, padding: '3px 7px', fontSize: 13, fontWeight: 700 }}
+                    autoFocus
+                  />
+                  <button className="btn btn-t btn-sm" onClick={saveTotalBudget} style={{ padding: '3px 7px' }}>
+                    <i className="ti ti-check" />
+                  </button>
+                  <button className="btn btn-sm" onClick={() => setEditingTotal(false)} style={{ padding: '3px 7px' }}>
+                    <i className="ti ti-x" />
+                  </button>
+                </div>
+              ) : (
+                <div
+                  style={{ fontSize: 20, fontWeight: 700, color: 'var(--muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5 }}
+                  onClick={() => { setTotalInput(String(totalBudgetVal)); setEditingTotal(true); }}
+                  title="Click to edit total budget"
+                >
+                  ₹{fmt(totalBudgetVal)}
+                  <i className="ti ti-pencil" style={{ fontSize: 12, opacity: 0.5 }} />
+                </div>
+              )}
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 2 }}>Remaining</div>
+              <div style={{ fontSize: 20, fontWeight: 700, color: over ? 'var(--coral)' : 'var(--teal)' }}>
+                {over ? '-' : ''}₹{fmt(Math.abs(remaining))}
+              </div>
+              {over && <div style={{ fontSize: 10, color: 'var(--coral)', fontWeight: 600, marginTop: 2 }}>Over budget!</div>}
+            </div>
           </div>
           <div style={{ height: 9, borderRadius: 5, background: '#f0ede6', overflow: 'hidden', marginBottom: 6 }}>
-            <div style={{ width: `${pct}%`, height: '100%', borderRadius: 5, background: 'linear-gradient(90deg,var(--pink),var(--amber))' }} />
+            <div style={{ width: `${Math.min(pct, 100)}%`, height: '100%', borderRadius: 5, background: pct > 95 ? 'var(--coral)' : 'linear-gradient(90deg,var(--pink),var(--amber))' }} />
           </div>
           <div style={{ fontSize: 11, color: 'var(--muted)' }}>{pct}% utilized</div>
         </div>

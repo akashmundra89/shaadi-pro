@@ -12,6 +12,9 @@ interface Props {
   onSelectWedding: (id: number) => void;
   onNavigate: (page: Page) => void;
   onNewWedding: () => void;
+  onSignOut: () => void;
+  isOpen: boolean;
+  onClose: () => void;
 }
 
 const NAV_ITEMS: { page: Page; icon: string; label: string }[] = [
@@ -25,14 +28,22 @@ const NAV_ITEMS: { page: Page; icon: string; label: string }[] = [
   { page: 'vlibrary', icon: 'ti ti-building-store', label: 'Vendor Library' },
 ];
 
-export default function Sidebar({ weddings, currentWeddingId, currentPage, onSelectWedding, onNavigate, onNewWedding }: Props) {
+export default function Sidebar({ weddings, currentWeddingId, currentPage, onSelectWedding, onNavigate, onNewWedding, onSignOut, isOpen, onClose }: Props) {
   return (
-    <div className="sb">
+    <div className={`sb${isOpen ? ' sb-open' : ''}`}>
       <div className="sb-top">
         <div className="sb-hero">
           <img className="sb-hero-img" src={heroPng} alt="" />
           <div className="sb-hero-overlay" />
           <div className="sb-hero-dec">💍</div>
+          {/* Mobile close button */}
+          <button
+            className="sb-close-btn"
+            onClick={onClose}
+            title="Close menu"
+          >
+            <i className="ti ti-x" />
+          </button>
         </div>
         <div className="brand">
           <div className="brand-ico">🪔</div>
@@ -85,6 +96,9 @@ export default function Sidebar({ weddings, currentWeddingId, currentPage, onSel
       <div className="sb-foot">
         <button className="btn-add" onClick={onNewWedding}>
           <i className="ti ti-plus" /> New Wedding
+        </button>
+        <button className="btn-signout" onClick={onSignOut}>
+          <i className="ti ti-logout" /> Sign Out
         </button>
       </div>
     </div>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { db } from '../db';
+import * as api from '../lib/api';
 import { useToast } from '../context/ToastContext';
 import { TimelineModal } from '../components/Modals';
 import type { TimelineItem } from '../types';
@@ -24,11 +24,11 @@ const SEED_MAIN: Omit<TimelineItem, 'id' | 'weddingId'>[] = [
 ];
 
 const SEED_PRE: Omit<TimelineItem, 'id' | 'weddingId'>[] = [
-  { day: 'pre', time: '12 Feb · 4:00 PM', text: 'Mehendi Ceremony 🌿', sub: "~80 guests · Bride's side · Mehendi artists booked", color: 'var(--teal)', sortOrder: 1 },
-  { day: 'pre', time: '12 Feb · 8:00 PM', text: 'Mehendi dinner', sub: 'Family gathering · Light dinner at residence', color: 'var(--teal)', sortOrder: 2 },
-  { day: 'pre', time: '13 Feb · 2:00 PM', text: "Haldi — Bride's side 🌸", sub: 'Intimate ceremony · Immediate family only', color: 'var(--purple)', sortOrder: 3 },
-  { day: 'pre', time: '13 Feb · 3:00 PM', text: "Haldi — Groom's side 🌸", sub: "Groom's house · Friends + family · DJ", color: 'var(--amber)', sortOrder: 4 },
-  { day: 'pre', time: '13 Feb · 7:00 PM', text: 'Sangeet Night 🎵', sub: 'Jai Mahal Palace Lawns · DJ · ~220 guests', color: 'var(--pink)', sortOrder: 5 },
+  { day: 'pre', time: '12 Jun · 4:00 PM', text: 'Mehendi Ceremony 🌿', sub: "~80 guests · Bride's side · Mehendi artists booked", color: 'var(--teal)', sortOrder: 1 },
+  { day: 'pre', time: '12 Jun · 8:00 PM', text: 'Mehendi dinner', sub: 'Family gathering · Light dinner at residence', color: 'var(--teal)', sortOrder: 2 },
+  { day: 'pre', time: '13 Jun · 2:00 PM', text: "Haldi — Bride's side 🌸", sub: 'Intimate ceremony · Immediate family only', color: 'var(--purple)', sortOrder: 3 },
+  { day: 'pre', time: '13 Jun · 3:00 PM', text: "Haldi — Groom's side 🌸", sub: "Groom's house · Friends + family · DJ", color: 'var(--amber)', sortOrder: 4 },
+  { day: 'pre', time: '13 Jun · 7:00 PM', text: 'Sangeet Night 🎵', sub: 'Jai Mahal Palace Lawns · DJ · ~220 guests', color: 'var(--pink)', sortOrder: 5 },
 ];
 
 function parseTimeToMinutes(timeStr: string): number {
@@ -58,14 +58,14 @@ export default function TimelinePage({ weddingId, refreshKey, onRefresh }: Props
 
   useEffect(() => {
     if (!weddingId) { setItems([]); return; }
-    db.timeline.where('weddingId').equals(weddingId).sortBy('sortOrder').then(async existing => {
+    api.getTimeline(weddingId).then(async existing => {
       if (existing.length === 0) {
         const seeds = [
           ...SEED_MAIN.map(s => ({ ...s, weddingId: weddingId! })),
           ...SEED_PRE.map(s => ({ ...s, weddingId: weddingId! })),
         ];
-        await db.timeline.bulkAdd(seeds);
-        const seeded = await db.timeline.where('weddingId').equals(weddingId).sortBy('sortOrder');
+        await api.bulkAddTimeline(seeds);
+        const seeded = await api.getTimeline(weddingId);
         setItems(seeded);
       } else {
         setItems(existing);
@@ -79,7 +79,7 @@ export default function TimelinePage({ weddingId, refreshKey, onRefresh }: Props
 
   async function deleteItem(id: number) {
     if (!confirm('Delete this timeline item?')) return;
-    await db.timeline.delete(id);
+    await api.deleteTimelineItem(id);
     onRefresh();
     toast('Timeline item deleted');
   }

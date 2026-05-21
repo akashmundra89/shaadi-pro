@@ -4,6 +4,7 @@ export interface Wedding {
   date: string;
   venue: string;
   city: string;
+  totalBudget?: number;
 }
 
 export interface Ceremony {

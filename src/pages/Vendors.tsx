@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { db } from '../db';
+import * as api from '../lib/api';
 import { fmt, CAT_ICO, CAT_BG } from '../utils';
 import { useToast } from '../context/ToastContext';
 import { VendorModal } from '../components/Modals';
@@ -23,7 +23,7 @@ export default function Vendors({ weddingId, refreshKey, onRefresh }: Props) {
 
   useEffect(() => {
     if (!weddingId) { setVendors([]); return; }
-    db.vendors.where('weddingId').equals(weddingId).toArray().then(setVendors);
+    api.getVendors(weddingId).then(setVendors);
   }, [weddingId, refreshKey]);
 
   function openAdd() { setEditItem(undefined); setShowModal(true); }
@@ -32,7 +32,7 @@ export default function Vendors({ weddingId, refreshKey, onRefresh }: Props) {
 
   async function deleteVendor(id: number) {
     if (!confirm('Remove this vendor?')) return;
-    await db.vendors.delete(id);
+    await api.deleteVendor(id);
     onRefresh();
     toast('Vendor removed');
   }
