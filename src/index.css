@@ -273,5 +273,8 @@ html,body{height:100%;font-family:system-ui,-apple-system,'Segoe UI',sans-serif;
   .dash-hero-body { padding: 16px 16px 14px; }
   .dash-hero-title { font-size: 22px; }
   .tb-s { display: none; }
-  .tb-r .btn:not(:last-child) { display: none; }
+  /* On mobile: hide button labels, show icons only */
+  .tb-btn-label { display: none; }
+  /* Hide Share and PDF on mobile — keep Backup */
+  .tb-r .btn-hide-mob { display: none; }
 }

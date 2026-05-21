@@ -55,8 +55,9 @@ export default function Budget({ weddingId, refreshKey, onRefresh }: Props) {
 
   const spent = budget.reduce((a, b) => a + b.spent, 0);
   const catTotal = budget.reduce((a, b) => a + b.total, 0);
-  // Use wedding.totalBudget if set, otherwise sum of categories
   const totalBudgetVal = wedding?.totalBudget ?? catTotal;
+  const remaining = totalBudgetVal - spent;
+  const over = remaining < 0;
   const pct = totalBudgetVal ? Math.round(spent / totalBudgetVal * 100) : 0;
 
   return (
@@ -101,7 +102,10 @@ export default function Budget({ weddingId, refreshKey, onRefresh }: Props) {
             </div>
             <div style={{ textAlign: 'right' }}>
               <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 2 }}>Remaining</div>
-              <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--teal)' }}>₹{fmt(totalBudgetVal - spent)}</div>
+              <div style={{ fontSize: 20, fontWeight: 700, color: over ? 'var(--coral)' : 'var(--teal)' }}>
+                {over ? '-' : ''}₹{fmt(Math.abs(remaining))}
+              </div>
+              {over && <div style={{ fontSize: 10, color: 'var(--coral)', fontWeight: 600, marginTop: 2 }}>Over budget!</div>}
             </div>
           </div>
           <div style={{ height: 9, borderRadius: 5, background: '#f0ede6', overflow: 'hidden', marginBottom: 6 }}>

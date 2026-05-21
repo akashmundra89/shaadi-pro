@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
+import * as XLSX from 'xlsx';
 import { supabase } from './lib/supabase';
 import * as api from './lib/api';
 import { fmtDate } from './utils';
@@ -95,6 +96,53 @@ export default function App() {
     if (t) { await api.updateTask(id, { done: !t.done }); refresh(); }
   }
 
+  async function exportWeddingAll() {
+    if (!currentWeddingId || !currentWedding) return;
+    const [cers, vendors, guests, budget, tasks, timeline] = await Promise.all([
+      api.getCeremonies(currentWeddingId),
+      api.getVendors(currentWeddingId),
+      api.getGuests(currentWeddingId),
+      api.getBudget(currentWeddingId),
+      api.getTasks(currentWeddingId),
+      api.getTimeline(currentWeddingId),
+    ]);
+
+    const wb = XLSX.utils.book_new();
+
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(
+      cers.map(c => ({ Name: c.name, Date: c.date, Time: c.time, Location: c.location, 'Expected Guests': c.guests, Side: c.side, Status: c.status }))
+    ), 'Ceremonies');
+
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(
+      vendors.map(v => ({ Name: v.name, Category: v.category, City: v.city, Phone: v.phone, 'Amount (₹)': v.amount, 'Pay Status': v.payStatus, Details: v.detail }))
+    ), 'Vendors');
+
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(
+      guests.map(g => ({ Name: g.name, Phone: g.phone || '', Side: g.side, Relation: g.relation, Ceremonies: g.ceremonies, RSVP: g.rsvp, Transport: g.transport, 'Food Pref': g.food, 'Room No': g.roomNumber || '', 'Checked In': g.checkedIn ? 'Yes' : 'No' }))
+    ), 'Guests');
+
+    const totalSpent = budget.reduce((s, b) => s + b.spent, 0);
+    const totalBudget = currentWedding.totalBudget ?? budget.reduce((s, b) => s + b.total, 0);
+    const budgetRows = budget.map(b => ({
+      Category: b.category, 'Spent (₹)': b.spent, 'Budget (₹)': b.total,
+      'Remaining (₹)': b.total - b.spent,
+      '% Used': b.total ? Math.round(b.spent / b.total * 100) + '%' : '0%',
+    }));
+    budgetRows.push({ Category: 'TOTAL', 'Spent (₹)': totalSpent, 'Budget (₹)': totalBudget, 'Remaining (₹)': totalBudget - totalSpent, '% Used': totalBudget ? Math.round(totalSpent / totalBudget * 100) + '%' : '0%' });
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(budgetRows), 'Budget');
+
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(
+      [...timeline].sort((a, b) => a.sortOrder - b.sortOrder).map(t => ({ Day: t.day === 'main' ? 'Wedding Day' : 'Pre-Wedding', Time: t.time, Event: t.text, Details: t.sub }))
+    ), 'Timeline');
+
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(
+      tasks.map(t => ({ Type: t.type === 'pre' ? 'Pre-Wedding' : 'Wedding Day', Task: t.label, 'Assigned To': t.who, Done: t.done ? 'Yes' : 'No' }))
+    ), 'Checklist');
+
+    const date = new Date().toISOString().slice(0, 10);
+    XLSX.writeFile(wb, `${currentWedding.name}_backup_${date}.xlsx`);
+  }
+
   async function signOut() {
     await supabase.auth.signOut();
     setSession(null);
@@ -156,6 +204,8 @@ export default function App() {
             title={currentWedding ? `${currentWedding.name} Wedding` : 'Select a Wedding'}
             subtitle={subtitle}
             onMenuToggle={() => setSidebarOpen(o => !o)}
+            hasWedding={!!currentWedding}
+            onExportAll={exportWeddingAll}
           />
 
           {currentPage === 'dash' && (
