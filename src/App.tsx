@@ -90,6 +90,15 @@ export default function App() {
     refresh();
   }
 
+  async function renameWedding(id: number, name: string) {
+    await api.updateWedding(id, { name });
+    const ws = await api.getWeddings();
+    setWeddings(ws);
+    if (id === currentWeddingId) {
+      setCurrentWedding(w => w ? { ...w, name } : w);
+    }
+  }
+
   async function toggleTask(id: number, currentDone: boolean) {
     await api.updateTask(id, { done: !currentDone });
     refresh();
@@ -189,6 +198,7 @@ export default function App() {
           onNavigate={navigateTo}
           onNewWedding={() => setShowWeddingModal(true)}
           onSignOut={signOut}
+          onRenameWedding={renameWedding}
           isOpen={sidebarOpen}
           onClose={() => setSidebarOpen(false)}
         />
