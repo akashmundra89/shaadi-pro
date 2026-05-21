@@ -1,5 +1,4 @@
 import { useEffect, useState, useCallback } from 'react';
-import * as XLSX from 'xlsx';
 import { supabase } from './lib/supabase';
 import * as api from './lib/api';
 import { fmtDate, daysUntil } from './utils';
@@ -104,6 +103,7 @@ export default function App() {
 
   async function exportWeddingAll() {
     if (!currentWeddingId || !currentWedding) return;
+    const XLSX = await import('xlsx');
     const [cers, vendors, guests, budget, tasks, timeline] = await Promise.all([
       api.getCeremonies(currentWeddingId),
       api.getVendors(currentWeddingId),

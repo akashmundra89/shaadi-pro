@@ -1,5 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
-import * as XLSX from 'xlsx';
+import { useEffect, useState } from 'react';
 import * as api from '../lib/api';
 import { CAT_ICO, CAT_BG, stars } from '../utils';
 import { useToast } from '../context/ToastContext';
@@ -44,8 +43,9 @@ export default function VendorLibrary({ refreshKey, onRefresh }: Props) {
     toast(`✓ ${v.name} added to ${w.name}`);
   }
 
-  function downloadLibrary() {
+  async function downloadLibrary() {
     if (filtered.length === 0) { toast('No vendors to download'); return; }
+    const XLSX = await import('xlsx');
     const rows = filtered.map(v => ({
       Name: v.name, Category: v.category, City: v.city,
       Phone: v.phone || '', Rating: v.rating, Details: v.detail || '',
@@ -64,7 +64,7 @@ export default function VendorLibrary({ refreshKey, onRefresh }: Props) {
     onRefresh();
   }
 
-  const cities = useMemo(() => [...new Set(vendors.map(v => v.city).filter(Boolean))].sort(), [vendors]);
+  const cities = [...new Set(vendors.map(v => v.city).filter(Boolean))].sort();
 
   const filtered = vendors
     .filter(v => cityFilter === 'all' || v.city === cityFilter)
