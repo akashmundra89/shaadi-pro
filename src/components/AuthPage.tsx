@@ -2,11 +2,16 @@ import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 import heroPng from '../assets/hero.png'
 
-export default function AuthPage() {
+interface Props {
+  onGuestAccess: () => void;
+}
+
+export default function AuthPage({ onGuestAccess }: Props) {
   const [mode, setMode] = useState<'signin' | 'signup'>('signin')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
+  const [guestLoading, setGuestLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
 
@@ -29,6 +34,15 @@ export default function AuthPage() {
       setError((err as { message?: string }).message ?? 'Something went wrong. Please try again.')
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function continueAsGuest() {
+    setGuestLoading(true)
+    try {
+      onGuestAccess()
+    } finally {
+      setGuestLoading(false)
     }
   }
 
@@ -166,8 +180,33 @@ export default function AuthPage() {
           }
         </div>
 
-        <div style={{ textAlign: 'center', marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--border)', fontSize: 10, color: 'var(--muted)', lineHeight: 1.6 }}>
-          Your wedding data is securely stored and only accessible to you.
+        {/* Divider */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '20px 0 16px' }}>
+          <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+          <span style={{ fontSize: 11, color: 'var(--muted)', whiteSpace: 'nowrap' }}>or</span>
+          <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+        </div>
+
+        {/* Guest access */}
+        <button
+          onClick={continueAsGuest}
+          disabled={guestLoading}
+          style={{
+            width: '100%', padding: '10px', borderRadius: 10, border: '1.5px dashed var(--border)',
+            background: 'transparent', color: 'var(--muted)', fontSize: 12, fontWeight: 600,
+            cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center',
+            justifyContent: 'center', gap: 7, transition: 'all .15s',
+            opacity: guestLoading ? 0.7 : 1,
+          }}
+          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--pink)'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--pink)' }}
+          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border)'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--muted)' }}
+        >
+          <i className="ti ti-device-laptop" style={{ fontSize: 15 }} />
+          {guestLoading ? 'Opening...' : 'Continue without account'}
+        </button>
+
+        <div style={{ textAlign: 'center', marginTop: 10, fontSize: 10, color: 'var(--muted)', lineHeight: 1.6 }}>
+          Guest mode: data saved in this browser only · no sync across devices
         </div>
       </div>
     </div>

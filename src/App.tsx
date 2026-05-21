@@ -7,6 +7,7 @@ import { ToastProvider } from './context/ToastContext';
 import Sidebar from './components/Sidebar';
 import Topbar from './components/Topbar';
 import { ModalManager } from './components/Modals';
+import AuthPage from './components/AuthPage';
 import Dashboard from './pages/Dashboard';
 import Ceremonies from './pages/Ceremonies';
 import Vendors from './pages/Vendors';
@@ -40,22 +41,22 @@ export default function App() {
 
   const refresh = useCallback(() => setRefreshKey(k => k + 1), []);
 
-  // Auth state — auto sign-in anonymously if no session exists (no login screen)
+  // Auth state
   useEffect(() => {
-    supabase.auth.getSession().then(async ({ data }) => {
-      if (data.session) {
-        setSession(data.session);
-      } else {
-        // No session → sign in anonymously so data saves to Supabase without any login form
-        const { data: anonData } = await supabase.auth.signInAnonymously();
-        setSession(anonData.session);
-      }
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session); // null = not logged in, show AuthPage
     });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, sess) => {
       setSession(sess);
     });
     return () => subscription.unsubscribe();
   }, []);
+
+  // Called when user clicks "Continue without account" on AuthPage
+  async function signInAsGuest() {
+    const { data } = await supabase.auth.signInAnonymously();
+    setSession(data.session);
+  }
 
   // Load weddings when session is available
   useEffect(() => {
@@ -166,6 +167,11 @@ export default function App() {
         </div>
       </div>
     );
+  }
+
+  // Not authenticated → show login page with guest option
+  if (!session) {
+    return <AuthPage onGuestAccess={signInAsGuest} />;
   }
 
   const daysLeft = currentWedding?.date
