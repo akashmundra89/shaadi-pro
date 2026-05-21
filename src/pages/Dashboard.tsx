@@ -37,25 +37,9 @@ export default function Dashboard({ weddingId, onNavigate, onToggleTask, refresh
     );
   }, [weddingId, refreshKey]);
 
-  if (!weddingId || !data) {
-    return (
-      <div className="page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ textAlign: 'center', maxWidth: 380 }}>
-          <div style={{ fontSize: 56, marginBottom: 16 }}>🪔</div>
-          <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 22, fontWeight: 700, marginBottom: 8 }}>
-            Welcome to Shaadi Pro
-          </div>
-          <div style={{ color: 'var(--muted)', fontSize: 13, lineHeight: 1.6 }}>
-            Select a wedding from the sidebar or create a new one to start managing your special day.
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  const { wedding, cers, vendors, guests, budget, tasks } = data;
-
   const stats = useMemo(() => {
+    if (!data) return null;
+    const { budget, guests, tasks, vendors } = data;
     const totalSpent = budget.reduce((a, b) => a + b.spent, 0);
     const totalBudget = budget.reduce((a, b) => a + b.total, 0);
     let confirmed = 0, awaited = 0, declined = 0, bride = 0, groom = 0, checkedIn = 0;
@@ -72,8 +56,25 @@ export default function Dashboard({ weddingId, onNavigate, onToggleTask, refresh
     const pendingTasks = tasks.filter(t => !t.done).slice(0, 4);
     const pct = totalBudget ? Math.round(totalSpent / totalBudget * 100) : 0;
     return { totalSpent, totalBudget, confirmed, awaited, declined, bride, groom, checkedIn, done, pendingVs, pendingTasks, pct };
-  }, [budget, guests, tasks, vendors]);
+  }, [data]);
 
+  if (!weddingId || !data || !stats) {
+    return (
+      <div className="page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ textAlign: 'center', maxWidth: 380 }}>
+          <div style={{ fontSize: 56, marginBottom: 16 }}>🪔</div>
+          <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 22, fontWeight: 700, marginBottom: 8 }}>
+            Welcome to Shaadi Pro
+          </div>
+          <div style={{ color: 'var(--muted)', fontSize: 13, lineHeight: 1.6 }}>
+            Select a wedding from the sidebar or create a new one to start managing your special day.
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const { wedding, cers, vendors, guests, budget, tasks } = data;
   const { totalSpent, totalBudget, confirmed, awaited, declined, bride, groom, checkedIn, done, pendingVs, pendingTasks, pct } = stats;
   const daysLeft = wedding?.date ? daysUntil(wedding.date) : null;
 
