@@ -1,7 +1,7 @@
 import { useRef } from 'react';
 import * as api from '../lib/api';
 import { useToast } from '../context/ToastContext';
-import type { Ceremony, Vendor, Guest, BudgetCategory, VendorLib, TimelineItem } from '../types';
+import type { Ceremony, Vendor, Guest, BudgetCategory, VendorLib, TimelineItem, Wedding } from '../types';
 
 const VENDOR_CATS = ['Venue','Catering','Photography','Décor','Music','Pandit','Makeup','Transport','Mehendi','Gifts','Other']
 
@@ -57,6 +57,45 @@ export function AddWeddingModal({ onClose, onRefresh, onSelect }: {
         <div className="form-row"><label>Wedding Date</label><input className="inp" type="date" ref={dateRef} /></div>
         <div className="form-row"><label>Venue</label><input className="inp" ref={venueRef} placeholder="e.g. Taj Hotel" /></div>
         <div className="form-row"><label>City</label><input className="inp" ref={cityRef} placeholder="e.g. Jaipur" /></div>
+      </div>
+    </ModalShell>
+  );
+}
+
+export function EditWeddingModal({ wedding, onClose, onSaved }: {
+  wedding: Wedding; onClose: () => void; onSaved: (updated: Wedding) => void;
+}) {
+  const { toast } = useToast();
+  const nameRef = useRef<HTMLInputElement>(null);
+  const dateRef = useRef<HTMLInputElement>(null);
+  const venueRef = useRef<HTMLInputElement>(null);
+  const cityRef = useRef<HTMLInputElement>(null);
+
+  async function save() {
+    const name = nameRef.current?.value.trim() || '';
+    if (!name) { toast('Enter wedding name'); return; }
+    const updated: Partial<Wedding> = {
+      name,
+      date: dateRef.current?.value || '',
+      venue: venueRef.current?.value.trim() || '',
+      city: cityRef.current?.value.trim() || '',
+    };
+    await api.updateWedding(wedding.id!, updated);
+    toast('✓ Wedding updated');
+    onSaved({ ...wedding, ...updated });
+    onClose();
+  }
+
+  return (
+    <ModalShell title="Edit Wedding" onClose={onClose} footer={<>
+      <button className="btn" onClick={onClose}>Cancel</button>
+      <button className="btn btn-p" onClick={save}><i className="ti ti-check" /> Save Changes</button>
+    </>}>
+      <div className="form-grid">
+        <div className="form-row"><label>Wedding Name (e.g. Sharma × Patel)</label><input className="inp" ref={nameRef} defaultValue={wedding.name} /></div>
+        <div className="form-row"><label>Wedding Date</label><input className="inp" type="date" ref={dateRef} defaultValue={wedding.date} /></div>
+        <div className="form-row"><label>Venue</label><input className="inp" ref={venueRef} defaultValue={wedding.venue} placeholder="e.g. Taj Hotel" /></div>
+        <div className="form-row"><label>City</label><input className="inp" ref={cityRef} defaultValue={wedding.city} placeholder="e.g. Jaipur" /></div>
       </div>
     </ModalShell>
   );

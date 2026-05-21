@@ -6,7 +6,7 @@ import { fmtDate, daysUntil } from './utils';
 import { ToastProvider } from './context/ToastContext';
 import Sidebar from './components/Sidebar';
 import Topbar from './components/Topbar';
-import { AddWeddingModal } from './components/Modals';
+import { AddWeddingModal, EditWeddingModal } from './components/Modals';
 import AuthPage from './components/AuthPage';
 import Dashboard from './pages/Dashboard';
 import Ceremonies from './pages/Ceremonies';
@@ -36,6 +36,7 @@ export default function App() {
   const [currentWedding, setCurrentWedding] = useState<Wedding | null>(null);
   const [currentPage, setCurrentPage] = useState<Page>(getPageFromHash());
   const [showWeddingModal, setShowWeddingModal] = useState(false);
+  const [showEditWeddingModal, setShowEditWeddingModal] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -90,13 +91,10 @@ export default function App() {
     refresh();
   }
 
-  async function renameWedding(id: number, name: string) {
-    await api.updateWedding(id, { name });
+  async function handleWeddingUpdated(updated: Wedding) {
     const ws = await api.getWeddings();
     setWeddings(ws);
-    if (id === currentWeddingId) {
-      setCurrentWedding(w => w ? { ...w, name } : w);
-    }
+    if (updated.id === currentWeddingId) setCurrentWedding(updated);
   }
 
   async function toggleTask(id: number, currentDone: boolean) {
@@ -198,7 +196,6 @@ export default function App() {
           onNavigate={navigateTo}
           onNewWedding={() => setShowWeddingModal(true)}
           onSignOut={signOut}
-          onRenameWedding={renameWedding}
           isOpen={sidebarOpen}
           onClose={() => setSidebarOpen(false)}
         />
@@ -210,6 +207,7 @@ export default function App() {
             onMenuToggle={() => setSidebarOpen(o => !o)}
             hasWedding={!!currentWedding}
             onExportAll={exportWeddingAll}
+            onEditWedding={() => setShowEditWeddingModal(true)}
           />
 
           {currentPage === 'dash' && (
@@ -243,6 +241,13 @@ export default function App() {
             onClose={() => setShowWeddingModal(false)}
             onRefresh={refreshWeddings}
             onSelect={id => selectWedding(id)}
+          />
+        )}
+        {showEditWeddingModal && currentWedding && (
+          <EditWeddingModal
+            wedding={currentWedding}
+            onClose={() => setShowEditWeddingModal(false)}
+            onSaved={handleWeddingUpdated}
           />
         )}
       </div>

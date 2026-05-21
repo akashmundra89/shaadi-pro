@@ -1,5 +1,3 @@
-import { useState } from 'react';
-import type React from 'react';
 import type { Wedding, Page } from '../types';
 import { fmtDate } from '../utils';
 import heroPng from '../assets/hero.png';
@@ -15,7 +13,6 @@ interface Props {
   onNavigate: (page: Page) => void;
   onNewWedding: () => void;
   onSignOut: () => void;
-  onRenameWedding: (id: number, name: string) => Promise<void>;
   isOpen: boolean;
   onClose: () => void;
 }
@@ -31,24 +28,7 @@ const NAV_ITEMS: { page: Page; icon: string; label: string }[] = [
   { page: 'vlibrary', icon: 'ti ti-building-store', label: 'Vendor Library' },
 ];
 
-export default function Sidebar({ weddings, currentWeddingId, currentPage, onSelectWedding, onNavigate, onNewWedding, onSignOut, onRenameWedding, isOpen, onClose }: Props) {
-  const [editingId, setEditingId] = useState<number | null>(null);
-  const [editName, setEditName] = useState('');
-
-  function startRename(w: Wedding, e: React.MouseEvent) {
-    e.stopPropagation();
-    setEditingId(w.id!);
-    setEditName(w.name);
-  }
-
-  async function commitRename(id: number) {
-    const name = editName.trim();
-    if (name) await onRenameWedding(id, name);
-    setEditingId(null);
-  }
-
-  function cancelRename() { setEditingId(null); }
-
+export default function Sidebar({ weddings, currentWeddingId, currentPage, onSelectWedding, onNavigate, onNewWedding, onSignOut, isOpen, onClose }: Props) {
   return (
     <div className={`sb${isOpen ? ' sb-open' : ''}`}>
       <div className="sb-top">
@@ -96,44 +76,17 @@ export default function Sidebar({ weddings, currentWeddingId, currentPage, onSel
           {weddings.map((w, i) => {
             const init = w.name.split('×').map(s => s.trim()[0] || '').join('') || w.name.slice(0, 2).toUpperCase();
             const ci = i % COLORS.length;
-            const isEditing = editingId === w.id;
             return (
               <div
                 key={w.id}
                 className={`w-pill ${w.id === currentWeddingId ? 'on' : ''}`}
-                onClick={() => !isEditing && w.id && onSelectWedding(w.id)}
+                onClick={() => w.id && onSelectWedding(w.id)}
               >
                 <div className="w-ava" style={{ background: BGS[ci], color: COLORS[ci] }}>{init}</div>
                 <div style={{ minWidth: 0, flex: 1 }}>
-                  {isEditing ? (
-                    <input
-                      className="inp"
-                      value={editName}
-                      onChange={e => setEditName(e.target.value)}
-                      onKeyDown={e => {
-                        if (e.key === 'Enter') commitRename(w.id!);
-                        if (e.key === 'Escape') cancelRename();
-                      }}
-                      onBlur={() => commitRename(w.id!)}
-                      onClick={e => e.stopPropagation()}
-                      style={{ fontSize: 12, padding: '2px 6px', width: '100%' }}
-                      autoFocus
-                    />
-                  ) : (
-                    <div className="w-nm">{w.name}</div>
-                  )}
+                  <div className="w-nm">{w.name}</div>
                   <div className="w-mt">{w.city || ''} · {fmtDate(w.date)}</div>
                 </div>
-                {w.id === currentWeddingId && !isEditing && (
-                  <button
-                    className="btn btn-sm"
-                    onClick={e => startRename(w, e)}
-                    title="Rename"
-                    style={{ color: 'var(--muted)', fontSize: 12, padding: '2px 4px', border: 'none', flexShrink: 0 }}
-                  >
-                    <i className="ti ti-pencil" />
-                  </button>
-                )}
               </div>
             );
           })}
