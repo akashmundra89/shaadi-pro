@@ -45,3 +45,8 @@ export function getCeremonyIcon(name: string): string {
   const entry = Object.entries(CEREMONY_ICO).find(([k]) => name.includes(k));
   return entry ? entry[1] : '🎊';
 }
+
+export function daysUntil(date: string): number | null {
+  if (!date) return null;
+  return Math.ceil((new Date(date).getTime() - Date.now()) / 86400000);
+}

@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import * as XLSX from 'xlsx';
 import * as api from '../lib/api';
 import { useToast } from '../context/ToastContext';
@@ -10,6 +10,10 @@ interface Props {
   refreshKey: number;
   onRefresh: () => void;
 }
+
+const SIDE_CLASS: Record<string, string> = { Bride: 'b', Groom: 'g', Both: 'bo' };
+const RSVP_CLASS: Record<string, string> = { Yes: 'y', No: 'n', Awaited: 'w' };
+const RSVP_LABEL: Record<string, string> = { Yes: '✓ Yes', No: '✗ No', Awaited: '⏳ Awaited' };
 
 export default function Guests({ weddingId, refreshKey, onRefresh }: Props) {
   const [guests, setGuests] = useState<Guest[]>([]);
@@ -65,8 +69,7 @@ export default function Guests({ weddingId, refreshKey, onRefresh }: Props) {
 
   async function exportGuests() {
     if (!weddingId) { toast('Select a wedding first'); return; }
-    const gs = await api.getGuests(weddingId);
-    const rows = gs.map(g => ({
+    const rows = guests.map(g => ({
       Name: g.name, Phone: g.phone || '', Side: g.side, Relation: g.relation,
       Ceremonies: g.ceremonies, RSVP: g.rsvp, Transport: g.transport, FoodPref: g.food,
       HotelRoom: g.roomNumber || '', CheckedIn: g.checkedIn ? 'Yes' : 'No',
@@ -79,17 +82,22 @@ export default function Guests({ weddingId, refreshKey, onRefresh }: Props) {
     toast('✓ Guest list downloaded');
   }
 
-  const filtered = guests.filter(g =>
-    !search || g.name.toLowerCase().includes(search.toLowerCase()) || (g.relation || '').toLowerCase().includes(search.toLowerCase())
-  );
-
-  const total = filtered.length;
-  const conf = filtered.filter(g => g.rsvp === 'Yes').length;
-  const await_ = filtered.filter(g => g.rsvp === 'Awaited').length;
-  const dec = filtered.filter(g => g.rsvp === 'No').length;
-  const bride = filtered.filter(g => g.side === 'Bride').length;
-  const groom = filtered.filter(g => g.side === 'Groom').length;
-  const checkedIn = guests.filter(g => g.checkedIn).length;
+  const { filtered, total, conf, await_, dec, bride, groom, checkedIn } = useMemo(() => {
+    const q = search.toLowerCase();
+    const filtered = q
+      ? guests.filter(g => g.name.toLowerCase().includes(q) || (g.relation || '').toLowerCase().includes(q))
+      : guests;
+    let conf = 0, await_ = 0, dec = 0, bride = 0, groom = 0, checkedIn = 0;
+    for (const g of filtered) {
+      if (g.rsvp === 'Yes') conf++;
+      else if (g.rsvp === 'Awaited') await_++;
+      else if (g.rsvp === 'No') dec++;
+      if (g.side === 'Bride') bride++;
+      else if (g.side === 'Groom') groom++;
+      if (g.checkedIn) checkedIn++;
+    }
+    return { filtered, total: filtered.length, conf, await_, dec, bride, groom, checkedIn };
+  }, [guests, search]);
 
   return (
     <>
@@ -148,12 +156,10 @@ export default function Guests({ weddingId, refreshKey, onRefresh }: Props) {
                   <tr key={g.id}>
                     <td><strong>{g.name}</strong></td>
                     <td style={{ fontSize: 11 }}>{g.phone || '—'}</td>
-                    <td><span className={`side-${g.side === 'Bride' ? 'b' : g.side === 'Groom' ? 'g' : 'bo'}`}>{g.side || '—'}</span></td>
+                    <td><span className={`side-${SIDE_CLASS[g.side] ?? 'bo'}`}>{g.side || '—'}</span></td>
                     <td>{g.relation || '—'}</td>
                     <td style={{ fontSize: 11 }}>{g.ceremonies || '—'}</td>
-                    <td className={`rsvp-${g.rsvp === 'Yes' ? 'y' : g.rsvp === 'No' ? 'n' : 'w'}`}>
-                      {g.rsvp === 'Yes' ? '✓ Yes' : g.rsvp === 'No' ? '✗ No' : '⏳ Awaited'}
-                    </td>
+                    <td className={`rsvp-${RSVP_CLASS[g.rsvp] ?? 'w'}`}>{RSVP_LABEL[g.rsvp] ?? g.rsvp}</td>
                     <td>{g.food || '—'}</td>
                     <td>
                       {g.checkedIn ? (

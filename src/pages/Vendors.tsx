@@ -12,6 +12,8 @@ interface Props {
 }
 
 const FILTERS = ['all', 'Venue', 'Catering', 'Photography', 'Décor', 'Music', 'Pandit', 'pending'];
+const PAY_CLASS: Record<string, string> = { paid: 'tpaid', advance: 'tadv', pending: 'tpend' };
+const PAY_LABEL: Record<string, string> = { paid: 'Fully paid', advance: 'Advance paid', pending: 'Pending ⚠️' };
 
 export default function Vendors({ weddingId, refreshKey, onRefresh }: Props) {
   const [vendors, setVendors] = useState<Vendor[]>([]);
@@ -71,9 +73,7 @@ export default function Vendors({ weddingId, refreshKey, onRefresh }: Props) {
               </div>
               <div style={{ textAlign: 'right' }}>
                 <div style={{ fontSize: 13, fontWeight: 700 }}>₹{fmt(v.amount || 0)}</div>
-                <span className={v.payStatus === 'paid' ? 'tpaid' : v.payStatus === 'advance' ? 'tadv' : 'tpend'}>
-                  {v.payStatus === 'paid' ? 'Fully paid' : v.payStatus === 'advance' ? 'Advance paid' : 'Pending ⚠️'}
-                </span>
+                <span className={PAY_CLASS[v.payStatus] ?? 'tpend'}>{PAY_LABEL[v.payStatus] ?? v.payStatus}</span>
                 <div style={{ marginTop: 4, display: 'flex', gap: 4, justifyContent: 'flex-end' }}>
                   <button className="btn btn-sm" onClick={() => openEdit(v)} title="Edit">
                     <i className="ti ti-pencil" />

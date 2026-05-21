@@ -104,10 +104,10 @@ function TaskList({ tasks, type, weddingId, onRefresh }: {
             <span className={`ck-lbl ${t.done ? 'done' : ''}`}>{t.label}</span>
             <span className="ck-who">{t.who}</span>
             <button
-              className="ck-del"
+              className="btn btn-sm"
               onClick={() => t.id && startEdit(t)}
               title="Edit"
-              style={{ color: 'var(--muted)', fontSize: 13 }}
+              style={{ color: 'var(--muted)', fontSize: 13, padding: '2px 5px', border: 'none' }}
             >
               <i className="ti ti-pencil" />
             </button>

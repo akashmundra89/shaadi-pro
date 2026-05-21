@@ -1,14 +1,16 @@
+import React from 'react';
 import { useToast } from '../context/ToastContext';
 
 interface Props {
   title: string;
-  subtitle: string;
+  subtitle: React.ReactNode;
   onMenuToggle: () => void;
   onExportAll?: () => void;
+  onEditWedding?: () => void;
   hasWedding?: boolean;
 }
 
-export default function Topbar({ title, subtitle, onMenuToggle, onExportAll, hasWedding }: Props) {
+export default function Topbar({ title, subtitle, onMenuToggle, onExportAll, onEditWedding, hasWedding }: Props) {
   const { toast } = useToast();
 
   async function share() {
@@ -28,25 +30,34 @@ export default function Topbar({ title, subtitle, onMenuToggle, onExportAll, has
   return (
     <div className="topbar">
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0, flex: 1 }}>
-        {/* Hamburger for mobile */}
         <button className="hamburger" onClick={onMenuToggle} title="Open menu">
           <i className="ti ti-menu-2" />
         </button>
         <div style={{ minWidth: 0, flex: 1 }}>
           <div className="tb-t" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{title}</div>
-          <div className="tb-s" dangerouslySetInnerHTML={{ __html: subtitle }} />
+          <div className="tb-s">{subtitle}</div>
         </div>
       </div>
       <div className="tb-r">
         {hasWedding && (
-          <button
-            className="btn btn-sm"
-            onClick={onExportAll}
-            title="Download all wedding data as Excel backup"
-            style={{ fontWeight: 600, borderColor: 'var(--teal)', color: 'var(--teal)', whiteSpace: 'nowrap' }}
-          >
-            <i className="ti ti-database-export" /> <span className="tb-btn-label">Backup Excel</span>
-          </button>
+          <>
+            <button
+              className="btn btn-sm"
+              onClick={onEditWedding}
+              title="Edit wedding details"
+              style={{ fontWeight: 600, borderColor: 'var(--pink)', color: 'var(--pink)', whiteSpace: 'nowrap' }}
+            >
+              <i className="ti ti-pencil" /> <span className="tb-btn-label">Edit Wedding</span>
+            </button>
+            <button
+              className="btn btn-sm"
+              onClick={onExportAll}
+              title="Download all wedding data as Excel backup"
+              style={{ fontWeight: 600, borderColor: 'var(--teal)', color: 'var(--teal)', whiteSpace: 'nowrap' }}
+            >
+              <i className="ti ti-database-export" /> <span className="tb-btn-label">Backup Excel</span>
+            </button>
+          </>
         )}
         <button className="btn btn-sm btn-hide-mob" onClick={share} title="Share">
           <i className="ti ti-share" /> <span className="tb-btn-label">Share</span>

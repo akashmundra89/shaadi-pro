@@ -1,13 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import * as api from '../lib/api';
-import { fmt, capStatus, getCeremonyIcon, fmtDate } from '../utils';
+import { fmt, capStatus, getCeremonyIcon, fmtDate, daysUntil } from '../utils';
 import type { Ceremony, Vendor, Guest, BudgetCategory, Task, Page, Wedding } from '../types';
 import heroPng from '../assets/hero.png';
 
 interface Props {
   weddingId: number | null;
   onNavigate: (page: Page) => void;
-  onToggleTask: (id: number) => void;
+  onToggleTask: (id: number, done: boolean) => void;
   refreshKey: number;
 }
 
@@ -37,7 +37,28 @@ export default function Dashboard({ weddingId, onNavigate, onToggleTask, refresh
     );
   }, [weddingId, refreshKey]);
 
-  if (!weddingId || !data) {
+  const stats = useMemo(() => {
+    if (!data) return null;
+    const { budget, guests, tasks, vendors } = data;
+    const totalSpent = budget.reduce((a, b) => a + b.spent, 0);
+    const totalBudget = budget.reduce((a, b) => a + b.total, 0);
+    let confirmed = 0, awaited = 0, declined = 0, bride = 0, groom = 0, checkedIn = 0;
+    for (const g of guests) {
+      if (g.rsvp === 'Yes') confirmed++;
+      else if (g.rsvp === 'Awaited') awaited++;
+      else if (g.rsvp === 'No') declined++;
+      if (g.side === 'Bride') bride++;
+      else if (g.side === 'Groom') groom++;
+      if (g.checkedIn) checkedIn++;
+    }
+    const done = tasks.filter(t => t.done).length;
+    const pendingVs = vendors.filter(v => v.payStatus === 'pending');
+    const pendingTasks = tasks.filter(t => !t.done).slice(0, 4);
+    const pct = totalBudget ? Math.round(totalSpent / totalBudget * 100) : 0;
+    return { totalSpent, totalBudget, confirmed, awaited, declined, bride, groom, checkedIn, done, pendingVs, pendingTasks, pct };
+  }, [data]);
+
+  if (!weddingId || !data || !stats) {
     return (
       <div className="page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ textAlign: 'center', maxWidth: 380 }}>
@@ -54,21 +75,8 @@ export default function Dashboard({ weddingId, onNavigate, onToggleTask, refresh
   }
 
   const { wedding, cers, vendors, guests, budget, tasks } = data;
-  const totalSpent = budget.reduce((a, b) => a + b.spent, 0);
-  const totalBudget = budget.reduce((a, b) => a + b.total, 0);
-  const confirmed = guests.filter(g => g.rsvp === 'Yes').length;
-  const done = tasks.filter(t => t.done).length;
-  const pendingVs = vendors.filter(v => v.payStatus === 'pending');
-  const pendingTasks = tasks.filter(t => !t.done).slice(0, 4);
-  const bride = guests.filter(g => g.side === 'Bride').length;
-  const groom = guests.filter(g => g.side === 'Groom').length;
-  const awaited = guests.filter(g => g.rsvp === 'Awaited').length;
-  const declined = guests.filter(g => g.rsvp === 'No').length;
-  const checkedIn = guests.filter(g => g.checkedIn).length;
-  const pct = totalBudget ? Math.round(totalSpent / totalBudget * 100) : 0;
-  const daysLeft = wedding?.date
-    ? Math.ceil((new Date(wedding.date).getTime() - Date.now()) / 86400000)
-    : null;
+  const { totalSpent, totalBudget, confirmed, awaited, declined, bride, groom, checkedIn, done, pendingVs, pendingTasks, pct } = stats;
+  const daysLeft = wedding?.date ? daysUntil(wedding.date) : null;
 
   return (
     <div className="page">
@@ -229,7 +237,7 @@ export default function Dashboard({ weddingId, onNavigate, onToggleTask, refresh
             {pendingTasks.length > 0
               ? pendingTasks.map(t => (
                 <div className="ck" key={t.id}>
-                  <div className="ck-box" onClick={() => t.id && onToggleTask(t.id)} />
+                  <div className="ck-box" onClick={() => t.id && onToggleTask(t.id, t.done)} />
                   <span className="ck-lbl">{t.label}</span>
                   <span className="ck-who">{t.who}</span>
                 </div>
