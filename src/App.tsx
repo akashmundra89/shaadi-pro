@@ -7,7 +7,6 @@ import { ToastProvider } from './context/ToastContext';
 import Sidebar from './components/Sidebar';
 import Topbar from './components/Topbar';
 import { ModalManager } from './components/Modals';
-import AuthPage from './components/AuthPage';
 import Dashboard from './pages/Dashboard';
 import Ceremonies from './pages/Ceremonies';
 import Vendors from './pages/Vendors';
@@ -41,10 +40,16 @@ export default function App() {
 
   const refresh = useCallback(() => setRefreshKey(k => k + 1), []);
 
-  // Auth state
+  // Auth state — auto sign-in anonymously if no session exists (no login screen)
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
+    supabase.auth.getSession().then(async ({ data }) => {
+      if (data.session) {
+        setSession(data.session);
+      } else {
+        // No session → sign in anonymously so data saves to Supabase without any login form
+        const { data: anonData } = await supabase.auth.signInAnonymously();
+        setSession(anonData.session);
+      }
     });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, sess) => {
       setSession(sess);
@@ -161,11 +166,6 @@ export default function App() {
         </div>
       </div>
     );
-  }
-
-  // Not authenticated
-  if (!session) {
-    return <AuthPage />;
   }
 
   const daysLeft = currentWedding?.date
