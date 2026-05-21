@@ -2,11 +2,11 @@ import { useEffect, useState, useCallback } from 'react';
 import * as XLSX from 'xlsx';
 import { supabase } from './lib/supabase';
 import * as api from './lib/api';
-import { fmtDate } from './utils';
+import { fmtDate, daysUntil } from './utils';
 import { ToastProvider } from './context/ToastContext';
 import Sidebar from './components/Sidebar';
 import Topbar from './components/Topbar';
-import { ModalManager } from './components/Modals';
+import { AddWeddingModal } from './components/Modals';
 import AuthPage from './components/AuthPage';
 import Dashboard from './pages/Dashboard';
 import Ceremonies from './pages/Ceremonies';
@@ -41,10 +41,9 @@ export default function App() {
 
   const refresh = useCallback(() => setRefreshKey(k => k + 1), []);
 
-  // Auth state
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session); // null = not logged in, show AuthPage
+      setSession(data.session);
     });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, sess) => {
       setSession(sess);
@@ -52,23 +51,18 @@ export default function App() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Called when user clicks "Continue without account" on AuthPage
   async function signInAsGuest() {
-    const { data } = await supabase.auth.signInAnonymously();
-    setSession(data.session);
+    await supabase.auth.signInAnonymously();
   }
 
-  // Load weddings when session is available
   useEffect(() => {
     if (!session) return;
-    api.seedIfEmpty().then(async () => {
-      const ws = await api.getWeddings();
+    api.seedIfEmpty().then(ws => {
       setWeddings(ws);
       if (ws.length > 0 && ws[0].id) selectWedding(ws[0].id, ws);
     });
   }, [session]);
 
-  // Hash routing
   useEffect(() => {
     function onHashChange() { setCurrentPage(getPageFromHash()); }
     window.addEventListener('hashchange', onHashChange);
@@ -96,10 +90,9 @@ export default function App() {
     refresh();
   }
 
-  async function toggleTask(id: number) {
-    const tasks = currentWeddingId ? await api.getTasks(currentWeddingId) : [];
-    const t = tasks.find(x => x.id === id);
-    if (t) { await api.updateTask(id, { done: !t.done }); refresh(); }
+  async function toggleTask(id: number, currentDone: boolean) {
+    await api.updateTask(id, { done: !currentDone });
+    refresh();
   }
 
   async function exportWeddingAll() {
@@ -157,7 +150,6 @@ export default function App() {
     setCurrentWedding(null);
   }
 
-  // Loading state
   if (session === undefined) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#1C0F14' }}>
@@ -169,23 +161,19 @@ export default function App() {
     );
   }
 
-  // Not authenticated → show login page with guest option
   if (!session) {
     return <AuthPage onGuestAccess={signInAsGuest} />;
   }
 
-  const daysLeft = currentWedding?.date
-    ? Math.ceil((new Date(currentWedding.date).getTime() - Date.now()) / 86400000)
-    : null;
+  const daysLeft = currentWedding?.date ? daysUntil(currentWedding.date) : null;
 
-  const subtitle = currentWedding
-    ? `${currentWedding.venue || ''} · ${currentWedding.city || ''} · ${fmtDate(currentWedding.date)} &nbsp;·&nbsp; <span style="color:var(--pink);font-weight:700">${daysLeft !== null && daysLeft > 0 ? daysLeft + ' days to go' : 'Event passed'}</span>`
-    : 'No wedding selected';
+  const subtitle = currentWedding ? (
+    <>{currentWedding.venue || ''} · {currentWedding.city || ''} · {fmtDate(currentWedding.date)} &nbsp;·&nbsp; <span style={{ color: 'var(--pink)', fontWeight: 700 }}>{daysLeft !== null && daysLeft > 0 ? `${daysLeft} days to go` : 'Event passed'}</span></>
+  ) : 'No wedding selected';
 
   return (
     <ToastProvider>
       <div className="app">
-        {/* Mobile overlay */}
         {sidebarOpen && (
           <div
             className="sb-overlay"
@@ -215,7 +203,7 @@ export default function App() {
           />
 
           {currentPage === 'dash' && (
-            <Dashboard weddingId={currentWeddingId} onNavigate={navigateTo} onToggleTask={toggleTask} refreshKey={refreshKey} />
+            <Dashboard weddingId={currentWeddingId} onNavigate={navigateTo} onToggleTask={(id, done) => toggleTask(id, done)} refreshKey={refreshKey} />
           )}
           {currentPage === 'ceremonies' && (
             <Ceremonies weddingId={currentWeddingId} refreshKey={refreshKey} onRefresh={refresh} />
@@ -240,12 +228,13 @@ export default function App() {
           )}
         </div>
 
-        <ModalManager
-          show={showWeddingModal}
-          onClose={() => setShowWeddingModal(false)}
-          onRefresh={refreshWeddings}
-          onWeddingSelect={id => selectWedding(id)}
-        />
+        {showWeddingModal && (
+          <AddWeddingModal
+            onClose={() => setShowWeddingModal(false)}
+            onRefresh={refreshWeddings}
+            onSelect={id => selectWedding(id)}
+          />
+        )}
       </div>
     </ToastProvider>
   );

@@ -1,8 +1,9 @@
+import React from 'react';
 import { useToast } from '../context/ToastContext';
 
 interface Props {
   title: string;
-  subtitle: string;
+  subtitle: React.ReactNode;
   onMenuToggle: () => void;
   onExportAll?: () => void;
   hasWedding?: boolean;
@@ -28,13 +29,12 @@ export default function Topbar({ title, subtitle, onMenuToggle, onExportAll, has
   return (
     <div className="topbar">
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0, flex: 1 }}>
-        {/* Hamburger for mobile */}
         <button className="hamburger" onClick={onMenuToggle} title="Open menu">
           <i className="ti ti-menu-2" />
         </button>
         <div style={{ minWidth: 0, flex: 1 }}>
           <div className="tb-t" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{title}</div>
-          <div className="tb-s" dangerouslySetInnerHTML={{ __html: subtitle }} />
+          <div className="tb-s">{subtitle}</div>
         </div>
       </div>
       <div className="tb-r">

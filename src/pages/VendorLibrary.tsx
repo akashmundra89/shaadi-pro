@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import * as XLSX from 'xlsx';
 import * as api from '../lib/api';
 import { CAT_ICO, CAT_BG, stars } from '../utils';
@@ -64,7 +64,7 @@ export default function VendorLibrary({ refreshKey, onRefresh }: Props) {
     onRefresh();
   }
 
-  const cities = [...new Set(vendors.map(v => v.city).filter(Boolean))].sort();
+  const cities = useMemo(() => [...new Set(vendors.map(v => v.city).filter(Boolean))].sort(), [vendors]);
 
   const filtered = vendors
     .filter(v => cityFilter === 'all' || v.city === cityFilter)

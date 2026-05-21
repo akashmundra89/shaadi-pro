@@ -3,6 +3,8 @@ import * as api from '../lib/api';
 import { useToast } from '../context/ToastContext';
 import type { Ceremony, Vendor, Guest, BudgetCategory, VendorLib, TimelineItem } from '../types';
 
+const VENDOR_CATS = ['Venue','Catering','Photography','Décor','Music','Pandit','Makeup','Transport','Mehendi','Gifts','Other']
+
 // ─── SHELL ───────────────────────────────────────────────────────────────────
 
 export function ModalShell({ title, onClose, children, footer }: {
@@ -41,7 +43,7 @@ export function AddWeddingModal({ onClose, onRefresh, onSelect }: {
       venue: venueRef.current?.value.trim() || '',
       city: cityRef.current?.value.trim() || '',
     });
-    onClose(); onRefresh(); onSelect(id as number);
+    onClose(); onRefresh(); onSelect(id);
     toast('✓ Wedding created: ' + name);
   }
 
@@ -176,8 +178,6 @@ export function VendorModal({ onClose, onRefresh, weddingId, editItem }: {
     onClose(); onRefresh();
   }
 
-  const CATS = ['Venue','Catering','Photography','Décor','Music','Pandit','Makeup','Transport','Mehendi','Gifts','Other'];
-
   return (
     <ModalShell title={isEdit ? 'Edit Vendor' : 'Add Vendor'} onClose={onClose} footer={<>
       <button className="btn" onClick={onClose}>Cancel</button>
@@ -188,7 +188,7 @@ export function VendorModal({ onClose, onRefresh, weddingId, editItem }: {
           <input className="inp" ref={nameRef} defaultValue={editItem?.name} placeholder="e.g. Kapoor Clicks" /></div>
         <div className="form-row"><label>Category</label>
           <select className="sel" ref={catRef} defaultValue={editItem?.category || 'Venue'}>
-            {CATS.map(c => <option key={c}>{c}</option>)}
+            {VENDOR_CATS.map(c => <option key={c}>{c}</option>)}
           </select>
         </div>
         <div className="form-row"><label>City</label>
@@ -355,8 +355,6 @@ export function LibVendorModal({ onClose, onRefresh, editItem }: {
   const ratingRef = useRef<HTMLInputElement>(null);
   const detailRef = useRef<HTMLInputElement>(null);
 
-  const CATS = ['Venue','Catering','Photography','Décor','Music','Pandit','Makeup','Transport','Mehendi','Other'];
-
   async function save() {
     const name = nameRef.current?.value.trim() || '';
     if (!name) { toast('Enter vendor name'); return; }
@@ -389,7 +387,7 @@ export function LibVendorModal({ onClose, onRefresh, editItem }: {
           <input className="inp" ref={nameRef} defaultValue={editItem?.name} placeholder="e.g. Fateh Prakash Palace" /></div>
         <div className="form-row"><label>Category</label>
           <select className="sel" ref={catRef} defaultValue={editItem?.category || 'Venue'}>
-            {CATS.map(c => <option key={c}>{c}</option>)}
+            {VENDOR_CATS.map(c => <option key={c}>{c}</option>)}
           </select>
         </div>
         <div className="form-row"><label>City / Location</label>
@@ -582,11 +580,3 @@ export function NotifyGuestsModal({ ceremony, checkedInGuests, onClose }: {
   );
 }
 
-// ─── MODAL MANAGER (App-level — wedding only) ────────────────────────────────
-
-export function ModalManager({ show, onClose, onRefresh, onWeddingSelect }: {
-  show: boolean; onClose: () => void; onRefresh: () => void; onWeddingSelect: (id: number) => void;
-}) {
-  if (!show) return null;
-  return <AddWeddingModal onClose={onClose} onRefresh={onRefresh} onSelect={onWeddingSelect} />;
-}

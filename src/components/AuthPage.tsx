@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase'
 import heroPng from '../assets/hero.png'
 
 interface Props {
-  onGuestAccess: () => void;
+  onGuestAccess: () => Promise<void>;
 }
 
 export default function AuthPage({ onGuestAccess }: Props) {
@@ -40,7 +40,7 @@ export default function AuthPage({ onGuestAccess }: Props) {
   async function continueAsGuest() {
     setGuestLoading(true)
     try {
-      onGuestAccess()
+      await onGuestAccess()
     } finally {
       setGuestLoading(false)
     }

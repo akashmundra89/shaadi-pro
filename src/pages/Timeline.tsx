@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import * as api from '../lib/api';
 import { useToast } from '../context/ToastContext';
 import { TimelineModal } from '../components/Modals';
@@ -84,9 +84,13 @@ export default function TimelinePage({ weddingId, refreshKey, onRefresh }: Props
     toast('Timeline item deleted');
   }
 
-  const filtered = [...items.filter(i => i.day === tab)].sort(
-    (a, b) => parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time) || a.sortOrder - b.sortOrder
-  );
+  const filtered = useMemo(() =>
+    items
+      .filter(i => i.day === tab)
+      .map(i => ({ item: i, mins: parseTimeToMinutes(i.time) }))
+      .sort((a, b) => a.mins - b.mins || a.item.sortOrder - b.item.sortOrder)
+      .map(({ item }) => item),
+  [items, tab]);
 
   return (
     <>
