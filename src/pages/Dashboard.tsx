@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { db } from '../db';
+import * as api from '../lib/api';
 import { fmt, capStatus, getCeremonyIcon, fmtDate } from '../utils';
 import type { Ceremony, Vendor, Guest, BudgetCategory, Task, Page, Wedding } from '../types';
 import heroPng from '../assets/hero.png';
@@ -26,12 +26,12 @@ export default function Dashboard({ weddingId, onNavigate, onToggleTask, refresh
   useEffect(() => {
     if (!weddingId) { setData(null); return; }
     Promise.all([
-      db.weddings.get(weddingId),
-      db.ceremonies.where('weddingId').equals(weddingId).toArray(),
-      db.vendors.where('weddingId').equals(weddingId).toArray(),
-      db.guests.where('weddingId').equals(weddingId).toArray(),
-      db.budget.where('weddingId').equals(weddingId).toArray(),
-      db.tasks.where('weddingId').equals(weddingId).toArray(),
+      api.getWedding(weddingId),
+      api.getCeremonies(weddingId),
+      api.getVendors(weddingId),
+      api.getGuests(weddingId),
+      api.getBudget(weddingId),
+      api.getTasks(weddingId),
     ]).then(([wedding, cers, vendors, guests, budget, tasks]) =>
       setData({ wedding: wedding || null, cers, vendors, guests, budget, tasks })
     );

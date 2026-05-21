@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import * as XLSX from 'xlsx';
-import { db } from '../db';
+import * as api from '../lib/api';
 import { useToast } from '../context/ToastContext';
 import { GuestModal, CheckInModal } from '../components/Modals';
 import type { Guest } from '../types';
@@ -22,7 +22,7 @@ export default function Guests({ weddingId, refreshKey, onRefresh }: Props) {
 
   useEffect(() => {
     if (!weddingId) { setGuests([]); return; }
-    db.guests.where('weddingId').equals(weddingId).toArray().then(setGuests);
+    api.getGuests(weddingId).then(setGuests);
   }, [weddingId, refreshKey]);
 
   function openAdd() { setEditItem(undefined); setShowModal(true); }
@@ -31,7 +31,7 @@ export default function Guests({ weddingId, refreshKey, onRefresh }: Props) {
 
   async function deleteGuest(id: number) {
     if (!confirm('Remove this guest?')) return;
-    await db.guests.delete(id);
+    await api.deleteGuest(id);
     onRefresh();
   }
 
@@ -55,7 +55,7 @@ export default function Guests({ weddingId, refreshKey, onRefresh }: Props) {
         food: r.FoodPref || r.food || r.Food || 'Veg',
         phone: r.Phone || r.phone || '',
       })).filter(g => g.name);
-      await db.guests.bulkAdd(newGuests);
+      await api.bulkAddGuests(newGuests);
       onRefresh();
       toast(`✓ Imported ${newGuests.length} guests`);
     };
@@ -65,7 +65,7 @@ export default function Guests({ weddingId, refreshKey, onRefresh }: Props) {
 
   async function exportGuests() {
     if (!weddingId) { toast('Select a wedding first'); return; }
-    const gs = await db.guests.where('weddingId').equals(weddingId).toArray();
+    const gs = await api.getGuests(weddingId);
     const rows = gs.map(g => ({
       Name: g.name, Phone: g.phone || '', Side: g.side, Relation: g.relation,
       Ceremonies: g.ceremonies, RSVP: g.rsvp, Transport: g.transport, FoodPref: g.food,
@@ -74,7 +74,7 @@ export default function Guests({ weddingId, refreshKey, onRefresh }: Props) {
     const ws = XLSX.utils.json_to_sheet(rows);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Guests');
-    const w = await db.weddings.get(weddingId);
+    const w = await api.getWedding(weddingId);
     XLSX.writeFile(wb, `${(w || { name: 'Wedding' }).name}_guests.xlsx`);
     toast('✓ Guest list downloaded');
   }

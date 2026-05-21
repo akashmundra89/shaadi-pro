@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { db } from '../db';
+import * as api from '../lib/api';
 import { capStatus, getCeremonyIcon } from '../utils';
 import { useToast } from '../context/ToastContext';
 import { CeremonyModal, NotifyGuestsModal } from '../components/Modals';
@@ -25,7 +25,7 @@ export default function Ceremonies({ weddingId, refreshKey, onRefresh }: Props) 
 
   useEffect(() => {
     if (!weddingId) { setCers([]); return; }
-    db.ceremonies.where('weddingId').equals(weddingId).toArray().then(setCers);
+    api.getCeremonies(weddingId).then(setCers);
   }, [weddingId, refreshKey]);
 
   function openAdd() { setEditItem(undefined); setShowModal(true); }
@@ -34,14 +34,14 @@ export default function Ceremonies({ weddingId, refreshKey, onRefresh }: Props) 
 
   async function deleteCer(id: number) {
     if (!confirm('Delete this ceremony?')) return;
-    await db.ceremonies.delete(id);
+    await api.deleteCeremony(id);
     onRefresh();
     toast('Ceremony deleted');
   }
 
   async function openNotify(c: Ceremony) {
     if (!weddingId) return;
-    const guests = await db.guests.where('weddingId').equals(weddingId).toArray();
+    const guests = await api.getGuests(weddingId);
     const inHotel = guests.filter(g => g.checkedIn);
     setCheckedInGuests(inHotel);
     setNotifyCeremony(c);

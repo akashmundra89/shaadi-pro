@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { db } from '../db';
+import * as api from '../lib/api';
 import { useToast } from '../context/ToastContext';
 import type { Task } from '../types';
 
@@ -24,19 +24,19 @@ function TaskList({ tasks, type, weddingId, onRefresh }: {
   const { toast } = useToast();
 
   async function toggle(id: number) {
-    const t = await db.tasks.get(id);
-    if (t) { await db.tasks.update(id, { done: !t.done }); onRefresh(); }
+    const t = tasks.find(x => x.id === id);
+    if (t) { await api.updateTask(id, { done: !t.done }); onRefresh(); }
   }
 
   async function deleteTask(id: number) {
-    await db.tasks.delete(id); onRefresh();
+    await api.deleteTask(id); onRefresh();
   }
 
   async function addTask() {
     if (!weddingId) { toast('Select a wedding first'); return; }
     const label = inp.trim();
     if (!label) return;
-    await db.tasks.add({ weddingId, type, label, who: who.trim(), done: false });
+    await api.addTask({ weddingId, type, label, who: who.trim(), done: false });
     setInp(''); setWho('');
     onRefresh();
     toast('✓ Task added');
@@ -52,7 +52,7 @@ function TaskList({ tasks, type, weddingId, onRefresh }: {
     if (!editing) return;
     const label = editing.label.trim();
     if (!label) { toast('Enter task label'); return; }
-    await db.tasks.update(editing.id, { label, who: editing.who.trim() });
+    await api.updateTask(editing.id, { label, who: editing.who.trim() });
     setEditing(null);
     onRefresh();
     toast('✓ Task updated');
@@ -145,7 +145,7 @@ export default function Checklist({ weddingId, refreshKey, onRefresh }: Props) {
 
   useEffect(() => {
     if (!weddingId) { setTasks([]); return; }
-    db.tasks.where('weddingId').equals(weddingId).toArray().then(setTasks);
+    api.getTasks(weddingId).then(setTasks);
   }, [weddingId, refreshKey]);
 
   const pre = tasks.filter(t => t.type === 'pre');

@@ -1,5 +1,5 @@
 import { useRef } from 'react';
-import { db } from '../db';
+import * as api from '../lib/api';
 import { useToast } from '../context/ToastContext';
 import type { Ceremony, Vendor, Guest, BudgetCategory, VendorLib, TimelineItem } from '../types';
 
@@ -36,7 +36,7 @@ export function AddWeddingModal({ onClose, onRefresh, onSelect }: {
   async function save() {
     const name = nameRef.current?.value.trim() || '';
     if (!name) { toast('Enter wedding name'); return; }
-    const id = await db.weddings.add({
+    const id = await api.addWedding({
       name, date: dateRef.current?.value || '',
       venue: venueRef.current?.value.trim() || '',
       city: cityRef.current?.value.trim() || '',
@@ -90,10 +90,10 @@ export function CeremonyModal({ onClose, onRefresh, weddingId, editItem }: {
       status: (statusRef.current?.value as Ceremony['status']) || 'upcoming',
     };
     if (isEdit && editItem.id) {
-      await db.ceremonies.update(editItem.id, data);
+      await api.updateCeremony(editItem.id, data);
       toast('✓ Ceremony updated');
     } else {
-      await db.ceremonies.add(data);
+      await api.addCeremony(data);
       toast('✓ Ceremony added');
     }
     onClose(); onRefresh();
@@ -164,12 +164,12 @@ export function VendorModal({ onClose, onRefresh, weddingId, editItem }: {
       payStatus: (payRef.current?.value as Vendor['payStatus']) || 'pending',
     };
     if (isEdit && editItem.id) {
-      await db.vendors.update(editItem.id, data);
+      await api.updateVendor(editItem.id, data);
       toast('✓ Vendor updated');
     } else {
-      await db.vendors.add(data);
+      await api.addVendor(data);
       if (libRef.current?.checked) {
-        await db.vendorLib.add({ name, category: cat, city, phone, detail, rating: 4, usedIn: [] });
+        await api.addVendorLib({ name, category: cat, city, phone, detail, rating: 4, usedIn: [] });
       }
       toast('✓ Vendor added');
     }
@@ -225,6 +225,7 @@ export function GuestModal({ onClose, onRefresh, weddingId, editItem }: {
   const isEdit = !!editItem;
   const { toast } = useToast();
   const nameRef = useRef<HTMLInputElement>(null);
+  const phoneRef = useRef<HTMLInputElement>(null);
   const sideRef = useRef<HTMLSelectElement>(null);
   const relRef = useRef<HTMLInputElement>(null);
   const foodRef = useRef<HTMLSelectElement>(null);
@@ -247,16 +248,14 @@ export function GuestModal({ onClose, onRefresh, weddingId, editItem }: {
       phone: phoneRef.current?.value.trim() || '',
     };
     if (isEdit && editItem.id) {
-      await db.guests.update(editItem.id, data);
+      await api.updateGuest(editItem.id, data);
       toast('✓ Guest updated');
     } else {
-      await db.guests.add(data);
+      await api.addGuest(data);
       toast('✓ Guest added');
     }
     onClose(); onRefresh();
   }
-
-  const phoneRef = useRef<HTMLInputElement>(null);
 
   return (
     <ModalShell title={isEdit ? 'Edit Guest' : 'Add Guest'} onClose={onClose} footer={<>
@@ -316,10 +315,10 @@ export function BudgetModal({ onClose, onRefresh, weddingId, editItem }: {
       total: parseInt(totalRef.current?.value || '0') || 0,
     };
     if (isEdit && editItem.id) {
-      await db.budget.update(editItem.id, data);
+      await api.updateBudgetCategory(editItem.id, data);
       toast('✓ Budget category updated');
     } else {
-      await db.budget.add(data);
+      await api.addBudgetCategory(data);
       toast('✓ Budget category added');
     }
     onClose(); onRefresh();
@@ -370,10 +369,10 @@ export function LibVendorModal({ onClose, onRefresh, editItem }: {
       rating: parseInt(ratingRef.current?.value || '4') || 4,
     };
     if (isEdit && editItem.id) {
-      await db.vendorLib.update(editItem.id, data);
+      await api.updateVendorLib(editItem.id, data);
       toast('✓ Vendor Library entry updated');
     } else {
-      await db.vendorLib.add({ ...data, usedIn: [] });
+      await api.addVendorLib({ ...data, usedIn: [] });
       toast('✓ Added to Vendor Library');
     }
     onClose(); onRefresh();
@@ -442,11 +441,11 @@ export function TimelineModal({ onClose, onRefresh, weddingId, editItem }: {
       sortOrder: isEdit ? editItem.sortOrder : 999,
     };
     if (isEdit && editItem.id) {
-      await db.timeline.update(editItem.id, data);
+      await api.updateTimelineItem(editItem.id, data);
       toast('✓ Timeline item updated');
     } else {
-      const count = await db.timeline.where('weddingId').equals(weddingId).count();
-      await db.timeline.add({ ...data, sortOrder: count + 1 });
+      const count = await api.countTimeline(weddingId);
+      await api.addTimelineItem({ ...data, sortOrder: count + 1 });
       toast('✓ Timeline item added');
     }
     onClose(); onRefresh();
@@ -491,13 +490,13 @@ export function CheckInModal({ guest, onClose, onRefresh }: {
   async function save() {
     const roomNumber = roomRef.current?.value.trim() || '';
     if (!roomNumber) { toast('Enter room number'); return; }
-    await db.guests.update(guest.id!, { roomNumber, checkedIn: true });
+    await api.updateGuest(guest.id!, { roomNumber, checkedIn: true });
     toast(`✓ ${guest.name} checked in — Room ${roomNumber}`);
     onClose(); onRefresh();
   }
 
   async function checkOut() {
-    await db.guests.update(guest.id!, { checkedIn: false, roomNumber: '' });
+    await api.updateGuest(guest.id!, { checkedIn: false, roomNumber: '' });
     toast(`✓ ${guest.name} checked out`);
     onClose(); onRefresh();
   }
