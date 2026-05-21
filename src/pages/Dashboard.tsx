@@ -74,7 +74,7 @@ export default function Dashboard({ weddingId, onNavigate, onToggleTask, refresh
     );
   }
 
-  const { wedding, cers, vendors, guests, budget, tasks } = data;
+  const { wedding, cers, vendors, guests, tasks } = data;
   const { totalSpent, totalBudget, confirmed, awaited, declined, bride, groom, checkedIn, done, pendingVs, pendingTasks, pct } = stats;
   const daysLeft = wedding?.date ? daysUntil(wedding.date) : null;
 
