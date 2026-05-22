@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Dark maroon background matching app theme -->
+  <rect width="512" height="512" rx="96" fill="#1C0F14"/>
+
+  <!-- Subtle decorative mandala ring -->
+  <circle cx="256" cy="256" r="185" fill="none" stroke="#C2486E" stroke-width="2" opacity="0.25"/>
+  <circle cx="256" cy="256" r="170" fill="none" stroke="#FFD875" stroke-width="1" opacity="0.15"/>
+
+  <!-- Decorative dots around ring -->
+  <circle cx="256" cy="71" r="4" fill="#FFD875" opacity="0.4"/>
+  <circle cx="256" cy="441" r="4" fill="#FFD875" opacity="0.4"/>
+  <circle cx="71" cy="256" r="4" fill="#FFD875" opacity="0.4"/>
+  <circle cx="441" cy="256" r="4" fill="#FFD875" opacity="0.4"/>
+  <circle cx="125" cy="125" r="3" fill="#C2486E" opacity="0.4"/>
+  <circle cx="387" cy="125" r="3" fill="#C2486E" opacity="0.4"/>
+  <circle cx="125" cy="387" r="3" fill="#C2486E" opacity="0.4"/>
+  <circle cx="387" cy="387" r="3" fill="#C2486E" opacity="0.4"/>
+
+  <!-- Diya (oil lamp) base - outer dark bowl -->
+  <ellipse cx="256" cy="345" rx="118" ry="42" fill="#6B2D1A"/>
+  <!-- Diya bowl - inner lighter rim -->
+  <ellipse cx="256" cy="332" rx="95" ry="35" fill="#8B3A22"/>
+  <!-- Diya bowl top / oil surface -->
+  <ellipse cx="256" cy="318" rx="72" ry="26" fill="#C2783C"/>
+  <!-- Oil surface sheen -->
+  <ellipse cx="256" cy="316" rx="52" ry="16" fill="#D4893D" opacity="0.7"/>
+  <!-- Diya lip / spout -->
+  <path d="M298 325 Q320 310 332 318 Q330 330 310 340 Q305 338 298 332 Z" fill="#8B3A22"/>
+  <!-- Decorative pattern on diya -->
+  <ellipse cx="210" cy="335" rx="7" ry="4" fill="#FFD875" opacity="0.5"/>
+  <ellipse cx="235" cy="344" rx="5" ry="3" fill="#FFD875" opacity="0.4"/>
+  <ellipse cx="275" cy="344" rx="5" ry="3" fill="#FFD875" opacity="0.4"/>
+  <ellipse cx="300" cy="337" rx="6" ry="4" fill="#FFD875" opacity="0.45"/>
+
+  <!-- Wick -->
+  <path d="M296 310 Q302 290 304 270" stroke="#5C3010" stroke-width="5" stroke-linecap="round" fill="none"/>
+  <circle cx="304" cy="268" r="5" fill="#5C3010"/>
+
+  <!-- Flame — outer glow -->
+  <ellipse cx="304" cy="215" rx="32" ry="52" fill="#FF4500" opacity="0.3"/>
+
+  <!-- Flame outer layer (orange) -->
+  <path d="M304 125
+    C288 160 272 190 274 228
+    C276 255 291 272 304 275
+    C317 272 332 255 334 228
+    C336 190 320 160 304 125Z"
+    fill="#E85C1A"/>
+
+  <!-- Flame middle layer (amber/gold) -->
+  <path d="M304 148
+    C292 178 282 202 284 230
+    C286 252 296 266 304 268
+    C312 266 322 252 324 230
+    C326 202 316 178 304 148Z"
+    fill="#FFB347"/>
+
+  <!-- Flame inner bright layer (yellow) -->
+  <path d="M304 170
+    C296 195 291 215 293 233
+    C295 250 301 260 304 262
+    C307 260 313 250 315 233
+    C317 215 312 195 304 170Z"
+    fill="#FFE566"/>
+
+  <!-- Flame core (white-ish) -->
+  <path d="M304 192
+    C300 210 298 224 300 236
+    C301 246 304 252 304 254
+    C304 252 307 246 308 236
+    C310 224 308 210 304 192Z"
+    fill="white" opacity="0.75"/>
+
+  <!-- Flame tip glow -->
+  <ellipse cx="304" cy="170" rx="8" ry="15" fill="white" opacity="0.35"/>
+
+  <!-- Sparkles / light rays -->
+  <line x1="304" y1="105" x2="304" y2="118" stroke="#FFD875" stroke-width="2.5" stroke-linecap="round" opacity="0.7"/>
+  <line x1="272" y1="114" x2="279" y2="125" stroke="#FFD875" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+  <line x1="336" y1="114" x2="329" y2="125" stroke="#FFD875" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+  <line x1="258" y1="135" x2="268" y2="143" stroke="#FFD875" stroke-width="1.5" stroke-linecap="round" opacity="0.4"/>
+  <line x1="350" y1="135" x2="340" y2="143" stroke="#FFD875" stroke-width="1.5" stroke-linecap="round" opacity="0.4"/>
+
+  <!-- Small dots of light -->
+  <circle cx="256" cy="210" r="3" fill="#FFD875" opacity="0.5"/>
+  <circle cx="352" cy="190" r="2.5" fill="#FFD875" opacity="0.45"/>
+  <circle cx="260" cy="175" r="2" fill="#FFD875" opacity="0.35"/>
+</svg>
